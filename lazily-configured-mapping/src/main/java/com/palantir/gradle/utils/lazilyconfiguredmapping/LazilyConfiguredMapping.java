@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.palantir.baseline.plugins.javaversions;
+package com.palantir.gradle.utils.lazilyconfiguredmapping;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -88,9 +88,5 @@ public final class LazilyConfiguredMapping<K, V, A> {
 
             return Optional.empty();
         });
-    }
-
-    public interface LazyValues<K, V, A> {
-        Optional<Action<V>> compute(K key, A additionalData);
     }
 }

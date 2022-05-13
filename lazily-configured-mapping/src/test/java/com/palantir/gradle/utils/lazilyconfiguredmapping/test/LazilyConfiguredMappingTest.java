@@ -19,7 +19,7 @@ package com.palantir.gradle.utils.lazilyconfiguredmapping.test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import com.palantir.baseline.plugins.javaversions.LazilyConfiguredMapping;
+import com.palantir.gradle.utils.lazilyconfiguredmapping.LazilyConfiguredMapping;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
