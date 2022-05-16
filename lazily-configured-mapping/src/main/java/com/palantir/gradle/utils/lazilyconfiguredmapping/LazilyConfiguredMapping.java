@@ -69,6 +69,7 @@ public final class LazilyConfiguredMapping<K, V, A> {
         }
     }
 
+    @SuppressWarnings("GuardedBy")
     public synchronized Optional<V> get(K key, A additionalData) {
         finalized = true;
 
