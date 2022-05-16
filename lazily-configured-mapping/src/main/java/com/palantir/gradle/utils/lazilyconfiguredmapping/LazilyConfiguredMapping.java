@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.palantir.baseline.plugins.javaversions;
+package com.palantir.gradle.utils.lazilyconfiguredmapping;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,7 +60,7 @@ public final class LazilyConfiguredMapping<K, V, A> {
         });
     }
 
-    private void ensureNotFinalized() {
+    private synchronized void ensureNotFinalized() {
         if (finalized) {
             throw new IllegalStateException(String.format(
                     "This %s has already been finalized as get() hase been called. "
@@ -69,6 +69,7 @@ public final class LazilyConfiguredMapping<K, V, A> {
         }
     }
 
+    @SuppressWarnings("GuardedBy")
     public synchronized Optional<V> get(K key, A additionalData) {
         finalized = true;
 
@@ -88,9 +89,5 @@ public final class LazilyConfiguredMapping<K, V, A> {
 
             return Optional.empty();
         });
-    }
-
-    public interface LazyValues<K, V, A> {
-        Optional<Action<V>> compute(K key, A additionalData);
     }
 }

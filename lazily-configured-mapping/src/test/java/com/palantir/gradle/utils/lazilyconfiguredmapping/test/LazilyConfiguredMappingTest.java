@@ -19,7 +19,7 @@ package com.palantir.gradle.utils.lazilyconfiguredmapping.test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
-import com.palantir.baseline.plugins.javaversions.LazilyConfiguredMapping;
+import com.palantir.gradle.utils.lazilyconfiguredmapping.LazilyConfiguredMapping;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 
@@ -74,11 +74,11 @@ class LazilyConfiguredMappingTest {
         lazilyConfiguredMapping.get("abc", 'c');
 
         assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> {
-            lazilyConfiguredMapping.put("foo", extension -> {});
+            lazilyConfiguredMapping.put("foo", _extension -> {});
         });
 
         assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> {
-            lazilyConfiguredMapping.put((_key, _additionalData) -> Optional.of(extension -> {}));
+            lazilyConfiguredMapping.put((_key, _additionalData) -> Optional.of(_extension -> {}));
         });
     }
 
