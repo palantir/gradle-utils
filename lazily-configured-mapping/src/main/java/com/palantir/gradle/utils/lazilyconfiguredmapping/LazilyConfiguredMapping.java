@@ -60,7 +60,7 @@ public final class LazilyConfiguredMapping<K, V, A> {
         });
     }
 
-    private void ensureNotFinalized() {
+    private synchronized void ensureNotFinalized() {
         if (finalized) {
             throw new IllegalStateException(String.format(
                     "This %s has already been finalized as get() hase been called. "
