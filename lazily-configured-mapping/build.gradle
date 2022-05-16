@@ -6,4 +6,5 @@ dependencies {
 
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'com.google.guava:guava'
 }

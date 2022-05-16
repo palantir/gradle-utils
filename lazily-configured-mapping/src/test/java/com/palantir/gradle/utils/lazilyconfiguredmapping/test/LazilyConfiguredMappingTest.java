@@ -19,9 +19,15 @@ package com.palantir.gradle.utils.lazilyconfiguredmapping.test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 
+import com.google.common.util.concurrent.Uninterruptibles;
 import com.palantir.gradle.utils.lazilyconfiguredmapping.LazilyConfiguredMapping;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 class LazilyConfiguredMappingTest {
     private final LazilyConfiguredMapping<String, Extension, Character> lazilyConfiguredMapping =
@@ -80,6 +86,37 @@ class LazilyConfiguredMappingTest {
         assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> {
             lazilyConfiguredMapping.put((_key, _additionalData) -> Optional.of(extension -> {}));
         });
+    }
+
+    @Test
+    @Timeout(2)
+    void handles_multiple_concurrent_gets() throws InterruptedException {
+        CountDownLatch insideOne = new CountDownLatch(0);
+        CountDownLatch releaseOne = new CountDownLatch(0);
+
+        lazilyConfiguredMapping.put((key, additionalData) -> {
+            if (key.equals("1")) {
+                insideOne.countDown();
+                Uninterruptibles.awaitUninterruptibly(releaseOne);
+            }
+
+            if (key.equals("2")) {
+                releaseOne.countDown();
+            }
+
+            return Optional.of(extension -> extension.number = Integer.parseInt(key));
+        });
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(() -> {
+            lazilyConfiguredMapping.get("1", null);
+        });
+
+        Uninterruptibles.awaitUninterruptibly(insideOne);
+
+        assertThat(lazilyConfiguredMapping.get("2", null)).hasValue(new Extension(2));
+
+        assertThat(executor.awaitTermination(1, TimeUnit.SECONDS)).isTrue();
     }
 
     private static final class Extension {
