@@ -19,6 +19,6 @@ package com.palantir.gradle.utils.lazilyconfiguredmapping;
 import java.util.Optional;
 import org.gradle.api.Action;
 
-interface LazyValues<K, V, A> {
+public interface LazyValues<K, V, A> {
     Optional<Action<V>> compute(K key, A additionalData);
 }
