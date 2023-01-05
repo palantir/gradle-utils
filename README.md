@@ -7,3 +7,4 @@ Please add utilities in their own package, so there is a hope they can be broken
 ## LazilyConfiguredMapping
 
 Like a `MapProperty`, except you do not have to know the keys upfront if you wish to insert multiple values lazily.
+test
