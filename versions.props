@@ -1,4 +1,4 @@
-org.junit.jupiter:* = 5.9.1
+org.junit.jupiter:* = 5.9.2
 org.assertj:assertj-core = 3.24.1
 
 # conflict resolution
