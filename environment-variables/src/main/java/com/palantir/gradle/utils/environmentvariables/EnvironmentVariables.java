@@ -23,6 +23,7 @@ import org.gradle.api.provider.ProviderFactory;
 public abstract class EnvironmentVariables {
 
     @Inject
+    @SuppressWarnings("JavaxInjectOnAbstractMethod")
     protected abstract ProviderFactory getProviderFactory();
 
     public final Provider<Boolean> isCi() {

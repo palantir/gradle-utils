@@ -1,6 +1,15 @@
 apply plugin: 'java-library'
 apply plugin: 'com.palantir.external-publish-jar'
+apply plugin: 'groovy'
 
 dependencies {
     implementation gradleApi()
+
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'com.netflix.nebula:nebula-test'
+}
+
+tasks.withType(Test).configureEach {
+    environment("VARIABLE", "actual value")
 }
