@@ -1,3 +1,4 @@
 rootProject.name = 'gradle-utils'
 
 include 'lazily-configured-mapping'
+include 'environment-variables'
