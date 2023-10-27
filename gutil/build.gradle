@@ -1,0 +1,7 @@
+apply plugin: 'java-library'
+apply plugin: 'com.palantir.external-publish-jar'
+
+dependencies {
+    implementation gradleApi()
+    implementation 'org.apache.commons:commons-lang3'
+}

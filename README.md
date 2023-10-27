@@ -27,3 +27,7 @@ To retrieve the value of a (test) environment variable, use the ```EnvironmentVa
 String value = environmentVariables.envVarOrFromTestingProperty("FOO").get(); 
 ```
 
+## GUtil
+
+The `GUtil` class in the `org.gradle.util` package has been deprecated and will be banned at some point. There are some very useful methods in here, notably around camel casing for use as task names. This library provides a selection of these methods. Please add more as needed, but try to avoid adding methods that are not used by any of the plugins. 
+
