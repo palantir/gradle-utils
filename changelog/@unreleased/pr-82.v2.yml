@@ -1,0 +1,6 @@
+type: feature
+feature:
+  description: Add `gutil` project that has a copy of parts of `GUtil` (initially
+    just the camel case pieces).
+  links:
+  - https://github.com/palantir/gradle-utils/pull/82
