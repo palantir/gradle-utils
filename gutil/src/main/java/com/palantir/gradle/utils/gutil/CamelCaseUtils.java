@@ -20,7 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 
-public final class GUtil {
+public final class CamelCaseUtils {
     private static final Pattern WORD_SEPARATOR = Pattern.compile("\\W+");
 
     public static String toLowerCamelCase(CharSequence string) {
@@ -64,5 +64,5 @@ public final class GUtil {
         return builder.toString();
     }
 
-    private GUtil() {}
+    private CamelCaseUtils() {}
 }
