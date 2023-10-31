@@ -1,0 +1,6 @@
+type: feature
+feature:
+  description: Add `dependency-graph-utils` which provides a way to get all components
+    from a root component in order to help support Configuration Cache rollout.
+  links:
+  - https://github.com/palantir/gradle-utils/pull/84
