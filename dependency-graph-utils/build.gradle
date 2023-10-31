@@ -1,0 +1,11 @@
+apply plugin: 'java-library'
+apply plugin: 'groovy'
+apply plugin: 'com.palantir.external-publish-jar'
+
+dependencies {
+    implementation gradleApi()
+
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'com.netflix.nebula:nebula-test'
+}
