@@ -241,8 +241,8 @@ class DependencyGraphUtilsIntegrationSpec extends IntegrationSpec {
         def allDeps = new File(subprojectDir, 'build/allDeps').text.strip()
 
         def expected = '''
-            group:subproject:1.0.0
-        '''.stripIndent(true)
+            project :subproject
+        '''.stripIndent(true).strip()
 
         allDeps == expected
     }
