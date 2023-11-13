@@ -39,11 +39,15 @@ public final class DependencyGraphUtils {
             // in every configuration that GCV inserts constraints into and is not a mavenBundle dep. However, there
             // can be a real mavenBundle dep as well that presents itself as another variant. So we must reject
             // component results that have just the GCV variant but not if there is another variant too.
-            boolean onlySelectedForGcvProps = current.getVariants().stream()
-                    .allMatch(resolvedVariantResult -> Optional.ofNullable(resolvedVariantResult
-                                    .getAttributes()
-                                    .getAttribute(Attribute.of("org.gradle.usage", String.class)))
-                            .equals(Optional.of("consistent-versions-usage")));
+            // Where there are no variants, this is still a valid dependency and not a GCV one (`allMatch` is trap
+            // here, as it returns true for an empty stream). Why would there be no variants when GCV always adds the
+            // platform dep? In cases where GCV is not used or when a configuration is copied, so GCV can't get to it.
+            boolean onlySelectedForGcvProps = !current.getVariants().isEmpty()
+                    && current.getVariants().stream()
+                            .allMatch(resolvedVariantResult -> Optional.ofNullable(resolvedVariantResult
+                                            .getAttributes()
+                                            .getAttribute(Attribute.of("org.gradle.usage", String.class)))
+                                    .equals(Optional.of("consistent-versions-usage")));
 
             if (onlySelectedForGcvProps) {
                 continue;

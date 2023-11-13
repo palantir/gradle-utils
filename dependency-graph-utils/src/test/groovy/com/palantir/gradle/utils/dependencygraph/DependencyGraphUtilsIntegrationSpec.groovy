@@ -54,10 +54,12 @@ class DependencyGraphUtilsIntegrationSpec extends IntegrationSpec {
             import com.palantir.gradle.utils.dependencygraph.DependencyGraphUtils
 
             task printAllDeps {
+                inputs.property('configurationName', 'runtimeClasspath')
                 outputs.file('build/allDeps')
             
                 doFirst {
-                    def root = configurations.runtimeClasspath.incoming.resolutionResult.rootComponent.get()
+                    def root = project.configurations.getByName(inputs.properties.get('configurationName'))
+                            .incoming.resolutionResult.rootComponent.get()
                     def all = DependencyGraphUtils.allComponentResultsFromRoot(root)
                     outputs.files.singleFile << all.collect { it.toString() }.sort().join('\\n')
                 }
@@ -218,6 +220,27 @@ class DependencyGraphUtilsIntegrationSpec extends IntegrationSpec {
             org.wildfly.client:wildfly-client-config:1.0.1.Final
             org.wildfly.common:wildfly-common:1.6.0.Final
             org.yaml:snakeyaml:2.1
+            project :subproject
+        '''.stripIndent(true).strip()
+
+        allDeps == expected
+    }
+
+    def 'when there is no GCV platform, or any variant on the root, the root is still selected'() {
+        // language=Gradle
+        subprojectBuildFile << '''
+            def runtimeClasspathCopy = configurations.runtimeClasspath.copy()
+
+            printAllDeps.inputs.property('configuration', runtimeClasspathCopy.name)
+        '''.stripIndent(true)
+
+        when:
+        runTasksSuccessfully('printAllDeps')
+
+        then:
+        def allDeps = new File(subprojectDir, 'build/allDeps').text.strip()
+
+        def expected = '''
             project :subproject
         '''.stripIndent(true).strip()
 
