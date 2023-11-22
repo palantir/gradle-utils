@@ -1,5 +1,5 @@
 # Run ./gradlew --write-locks to regenerate this file
-org.apache.commons:commons-lang3:3.13.0 (1 constraints: 39053e3b)
+org.apache.commons:commons-lang3:3.14.0 (1 constraints: 3a05413b)
 
 [Test dependencies]
 cglib:cglib-nodep:3.2.2 (1 constraints: 490ded24)
