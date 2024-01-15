@@ -66,6 +66,11 @@ class CircleCiArtifactsTest extends IntegrationSpec {
     }
 
     def "empty property if we're not in circle"() {
+        given:
+        file('gradle.properties') << """
+            __TESTING = true
+        """.stripIndent(true)
+
         when: 'running the task to print the path and location'
         def result = runTasksSuccessfully('printCircleCiLocation')
 
