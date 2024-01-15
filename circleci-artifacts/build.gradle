@@ -1,0 +1,17 @@
+apply plugin: 'java-library'
+apply plugin: 'com.palantir.external-publish-jar'
+apply plugin: 'groovy'
+
+dependencies {
+    implementation project(':environment-variables')
+    implementation gradleApi()
+
+    annotationProcessor 'org.immutables:value'
+
+    compileOnly 'com.palantir.immutables.style:immutables-style'
+    compileOnly 'org.immutables:value::annotations'
+
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'com.netflix.nebula:nebula-test'
+}
