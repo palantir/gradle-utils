@@ -36,3 +36,41 @@ The `GUtil` class in the `org.gradle.util` package has been deprecated and will 
 [To support Configuration Cache, you need to use new APIs](https://docs.gradle.org/8.4/userguide/configuration_cache.html#config_cache:requirements:~:text=Referencing%20dependency%20resolution,invoking%20ResolutionResult.getRootComponent()) when passing the components of a resolved `Configuration` to a `Task`. No longer can you pass in the `Configuration` object then use it in the task, instead you must call the method [`Provider<ResolvedComponentResult> getRootComponent()`](https://docs.gradle.org/8.4/javadoc/org/gradle/api/artifacts/result/ResolutionResult.html#getRootComponent--) on `ResolutionResult` rather than [`Set<ResolvedComponentResult> getAllComponents()`](https://docs.gradle.org/8.4/javadoc/org/gradle/api/artifacts/result/ResolutionResult.html#getAllComponents--).
 
 The problem is that this just gives you the root - you need to do a search of the graph yourself to get all the components. This library provides a utility method to do this for you: `DependencyGraphUtils#getAllComponents(ResolvedComponentResult)`.
+
+## circleci-artifacts
+
+Plugins can sometimes fail in weird corner cases and may not be reproducible locally. When running a plugin in CI, it is often useful to emit files that can be later used for debugging after the fact should something go wrong. 
+
+In CircleCI, you can write files to a location specified by the `CIRCLE_ARTIFACTS` environment variable, and you will be able to see these files in the artifacts tab in the UI.
+
+This library makes it relatively easy to just get a location and not do a bunch of checks that end up getting proliferated everywhere.
+
+In addition, it can produce a URL that can be embedded in error messages for easier debuggability.
+
+### How to use
+
+#### `@Nested` annotation
+
+You can use this within any sort of [managed object](https://docs.gradle.org/current/userguide/custom_gradle_types.html#managed_properties) by using the `@Nested` annotation.
+```gradle
+public abstract class MyTaskOrExtension {
+    @Nested
+    abstract CircleCiArtifacts getCircleCiArtifacts();
+}
+```
+
+As Gradle manages the lifecycle of this object, it will instantiate `CircleCiArtifacts` for you and provide an implementation of the method that returns the aforementioned object
+
+#### `ObjectFactory` instantiation
+
+Depending on context, you can also explicitly invoke Gradle's `ObjectFactory`:
+
+```java
+public final class MyPlugin implements Plugin<Project> {
+    @Override
+    public void apply(Project project) {
+        // you can create as many instances as  you like as it's not tied to any lifecycle
+        CircleCiArtifacts artifacts = project.getObjects().newInstance(CircleCiArtifacts.class);
+    }
+}
+```
