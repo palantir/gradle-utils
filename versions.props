@@ -3,7 +3,6 @@ org.apache.commons:commons-lang3 = 3.14.0
 org.junit.jupiter:* = 5.10.1
 org.assertj:assertj-core = 3.25.1
 com.netflix.nebula:nebula-test = 10.0.0
-com.palantir.immutables.style:* = 1.26.0
 org.immutables:* = 2.10.0
 
 # conflict resolution

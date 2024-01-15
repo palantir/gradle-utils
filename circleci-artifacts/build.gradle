@@ -8,7 +8,6 @@ dependencies {
 
     annotationProcessor 'org.immutables:value'
 
-    compileOnly 'com.palantir.immutables.style:immutables-style'
     compileOnly 'org.immutables:value::annotations'
 
     testImplementation 'org.assertj:assertj-core'

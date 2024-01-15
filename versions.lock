@@ -1,5 +1,4 @@
 # Run ./gradlew --write-locks to regenerate this file
-com.palantir.immutables.style:immutables-style:1.26.0 (1 constraints: 3b053f3b)
 org.apache.commons:commons-lang3:3.14.0 (1 constraints: 3a05413b)
 org.immutables:value:2.10.0 (1 constraints: 35052f3b)
 
