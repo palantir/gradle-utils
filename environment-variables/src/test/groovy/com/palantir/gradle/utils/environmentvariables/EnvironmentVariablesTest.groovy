@@ -17,7 +17,6 @@
 package com.palantir.gradle.utils.environmentvariables
 
 import nebula.test.IntegrationSpec
-import nebula.test.functional.ExecutionResult
 
 class EnvironmentVariablesTest extends IntegrationSpec {
     def setup() {
@@ -31,23 +30,53 @@ class EnvironmentVariablesTest extends IntegrationSpec {
             }
 
             def variables = objects.newInstance(TestClass).environmentVariables
-            println('Variable: ' + variables.envVarOrFromTestingProperty('VARIABLE').get())
+            println('Variable: ' + variables.envVarOrFromTestingProperty('VARIABLE').getOrNull())
+            println('isCircleNode0OrLocal: ' + variables.isCircleNode0OrLocal().getOrNull())
         '''.stripIndent(true)
     }
+
     def 'can get testing variables'() {
         when:
-        ExecutionResult result = runTasksSuccessfully('tasks', '-P__TESTING=true', '-P__TESTING_VARIABLE=test')
+        def stdout = runTasksSuccessfully('help',
+                '-P__TESTING=true', '-P__TESTING_VARIABLE=test').standardOutput
 
         then:
-        result.standardOutput.contains("Variable: test")
+        stdout.contains("Variable: test")
     }
 
     def 'can get environment variables'() {
         when:
-        ExecutionResult result = runTasksSuccessfully('tasks')
+        def stdout = runTasksSuccessfully('help').standardOutput
 
         then:
-        result.standardOutput.contains("Variable: actual value")
+        stdout.contains("Variable: actual value")
+    }
+
+    def 'isCircleNode0OrLocal returns true on circle node 0'() {
+        when:
+        def stdout = runTasksSuccessfully('help',
+                '-P__TESTING=true', '-P__TESTING_CIRCLE_NODE_INDEX=0').standardOutput
+
+        then:
+        stdout.contains("isCircleNode0OrLocal: true")
+    }
+
+    def 'isCircleNode0OrLocal returns false on circle node 1'() {
+        when:
+        def stdout = runTasksSuccessfully('help',
+                '-P__TESTING=true', '-P__TESTING_CIRCLE_NODE_INDEX=1').standardOutput
+
+        then:
+        stdout.contains("isCircleNode0OrLocal: false")
+    }
+
+    def 'isCircleNode0OrLocal returns true locally'() {
+        when:
+        def stdout = runTasksSuccessfully('help',
+                '-P__TESTING=true').standardOutput
+
+        then:
+        stdout.contains("isCircleNode0OrLocal: true")
     }
 
 }
