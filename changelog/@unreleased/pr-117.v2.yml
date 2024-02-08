@@ -1,0 +1,5 @@
+type: feature
+feature:
+  description: Add `isCircleNode0OrLocal` to `EnvironmentVariables`
+  links:
+  - https://github.com/palantir/gradle-utils/pull/117
