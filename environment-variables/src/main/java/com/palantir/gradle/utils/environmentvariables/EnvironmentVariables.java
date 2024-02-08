@@ -30,6 +30,12 @@ public abstract class EnvironmentVariables {
         return envVarOrFromTestingProperty("CI").map(_value -> true).orElse(false);
     }
 
+    public final Provider<Boolean> isCircleNode0OrLocal() {
+        return envVarOrFromTestingProperty("CIRCLE_NODE_INDEX")
+                .map(index -> index.equals("0"))
+                .orElse(true);
+    }
+
     public final Provider<String> envVarOrFromTestingProperty(String envVar) {
         Provider<Boolean> testingProvider = getProviderFactory()
                 .gradleProperty("__TESTING")
