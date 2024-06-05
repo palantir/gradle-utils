@@ -4,5 +4,5 @@ apply plugin: 'com.palantir.external-publish-jar'
 
 dependencies {
     implementation gradleApi()
-    implementation 'com.gradle:develocity-gradle-plugin-adapters'
+    api 'com.gradle:develocity-gradle-plugin-adapters'
 }
