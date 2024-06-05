@@ -1,0 +1,6 @@
+type: feature
+feature:
+  description: Add a utility method to get the `DevelocityAdapter` to support both
+    `gradleEnterprise` and `develocity` extensions.
+  links:
+  - https://github.com/palantir/gradle-utils/pull/187
