@@ -1,0 +1,8 @@
+apply plugin: 'java-library'
+apply plugin: 'groovy'
+apply plugin: 'com.palantir.external-publish-jar'
+
+dependencies {
+    implementation gradleApi()
+    implementation 'com.gradle:develocity-gradle-plugin-adapters'
+}
