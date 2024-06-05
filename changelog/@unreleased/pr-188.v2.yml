@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: Expose `develocity-agent-adapters` as `api` instead of `implementation`.
+  links:
+  - https://github.com/palantir/gradle-utils/pull/188
