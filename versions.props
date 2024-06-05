@@ -9,3 +9,4 @@ org.immutables:* = 2.10.1
 com.google.code.findbugs:jsr305 = 3.0.2
 com.google.errorprone:error_prone_annotations = 2.11.0
 org.checkerframework:checker-qual = 3.44.0
+com.gradle:develocity-gradle-plugin-adapters = 1.0.2
