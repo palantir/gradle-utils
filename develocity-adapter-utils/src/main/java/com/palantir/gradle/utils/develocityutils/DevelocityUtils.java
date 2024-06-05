@@ -30,7 +30,7 @@ public final class DevelocityUtils {
 
     private DevelocityUtils() {}
 
-    public Optional<DevelocityAdapter> getDevelocityExtension(Project project) {
+    public static Optional<DevelocityAdapter> getDevelocityExtension(Project project) {
         Object develocityConfiguration =
                 project.getRootProject().getExtensions().findByName("develocity");
         if (develocityConfiguration != null) {
