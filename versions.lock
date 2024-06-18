@@ -1,4 +1,4 @@
-# Run ./gradlew writeVersionsLock to regenerate this file
+# Run ./gradlew writeVersionsLocks to regenerate this file
 com.gradle:develocity-gradle-plugin-adapters:1.0.2 (1 constraints: 0505f235)
 org.apache.commons:commons-lang3:3.14.0 (1 constraints: 3a05413b)
 org.immutables:value:2.10.1 (1 constraints: 3605303b)
