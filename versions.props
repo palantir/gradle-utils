@@ -1,4 +1,4 @@
-org.apache.commons:commons-lang3 = 3.16.0
+org.apache.commons:commons-lang3 = 3.17.0
 
 org.junit.jupiter:* = 5.11.0
 org.assertj:assertj-core = 3.26.3

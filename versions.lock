@@ -1,6 +1,6 @@
 # Run ./gradlew writeVersionsLocks to regenerate this file
 com.gradle:develocity-gradle-plugin-adapters:1.0.2 (1 constraints: 0505f235)
-org.apache.commons:commons-lang3:3.16.0 (1 constraints: 3c05473b)
+org.apache.commons:commons-lang3:3.17.0 (1 constraints: 3d054a3b)
 org.immutables:value:2.10.1 (1 constraints: 3605303b)
 
 [Test dependencies]
