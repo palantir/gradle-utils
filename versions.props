@@ -8,5 +8,5 @@ org.immutables:* = 2.10.1
 # conflict resolution
 com.google.code.findbugs:jsr305 = 3.0.2
 com.google.errorprone:error_prone_annotations = 2.11.0
-org.checkerframework:checker-qual = 3.48.0
+org.checkerframework:checker-qual = 3.48.1
 com.gradle:develocity-gradle-plugin-adapters = 1.0.2
