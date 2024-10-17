@@ -23,7 +23,6 @@ class DependencyGraphUtilsIntegrationSpec extends IntegrationSpec {
     File subprojectBuildFile
 
     def setup() {
-        System.setProperty('ignoreDeprecations', 'true')
         // language=Gradle
         settingsFile << '''
             rootProject.name = 'root'
@@ -153,6 +152,7 @@ class DependencyGraphUtilsIntegrationSpec extends IntegrationSpec {
     }
 
     def 'prints all deps successfully with GCV, not including dep on root project via GCV'() {
+        System.setProperty('ignoreDeprecations', 'true')
         // language=Gradle
         buildFile << '''
             apply plugin: 'com.palantir.consistent-versions'
