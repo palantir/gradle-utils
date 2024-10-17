@@ -23,6 +23,7 @@ class DependencyGraphUtilsIntegrationSpec extends IntegrationSpec {
     File subprojectBuildFile
 
     def setup() {
+        System.setProperty('ignoreDeprecations', 'true')
         // language=Gradle
         settingsFile << '''
             rootProject.name = 'root'
