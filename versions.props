@@ -1,6 +1,6 @@
 org.apache.commons:commons-lang3 = 3.17.0
 
-org.junit.jupiter:* = 5.11.2
+org.junit.jupiter:* = 5.11.3
 org.assertj:assertj-core = 3.26.3
 com.netflix.nebula:nebula-test = 10.6.1
 org.immutables:* = 2.10.1
