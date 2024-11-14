@@ -33,7 +33,7 @@ import java.util.List;
  *         ExecutionResult result = runTasksSuccessfully('someTask')
  *
  *         where:
- *         version << TestDepVersions.GRADLE_VERSIONS
+ *         version << GradleTestVersions.getGradleVersions()
  *     }
  *  }
  */
