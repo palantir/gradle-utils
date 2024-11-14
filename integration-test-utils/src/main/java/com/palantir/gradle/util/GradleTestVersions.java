@@ -20,8 +20,8 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Utility class to maintain and update canonical list versions of gradle to test against.  This helps verify that a plugin is both
- * backwards and forwards compatible.
+ * Utility class to maintain and update canonical list versions of gradle to test against.  This helps verify that a plugin
+ * is both backwards and forwards compatible.
  *
  *  {@code
  *     @Unroll
