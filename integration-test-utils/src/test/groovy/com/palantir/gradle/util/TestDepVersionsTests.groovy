@@ -22,10 +22,7 @@ import static com.palantir.gradle.util.TestDepVersions.resolve
 
 class TestDepVersionsTests extends IntegrationSpec {
     def setup() {
-        System.setProperty('ignoreDeprecations', 'true')
         TestDepVersions.setVersionsDir(projectDir.toPath())
-        writeHelloWorld('com.testing')
-
         //write versions.props - I am aware of the irony that I am using a hardcoded version within the test file
         file('versions.props') << """
             com.palantir.sls-packaging:* = 7.69.0
@@ -33,68 +30,31 @@ class TestDepVersionsTests extends IntegrationSpec {
         file('versions.lock') << """
             com.palantir.sls-packaging:gradle-sls-packaging-api:7.69.0 (1 constraints: f2133970)
         """.stripIndent()
-
-        buildFile << """
-            buildscript {
-                repositories {
-                    mavenCentral()
-                }
-                dependencies {
-                    classpath '${resolve('com.palantir.sls-packaging:gradle-sls-packaging')}'
-                }
-            }
-
-            group = 'org.test'
-            version = '1.0.0'
-
-            apply plugin: 'java'
-            apply plugin: 'com.palantir.sls-java-service-distribution'
-
-            distribution {
-                serviceName 'sample-service'
-                mainClass 'com.testing.hello'
-            }
-        """.stripIndent()
     }
 
     def 'test fully specified dep'() {
-
         when:
-        ExecutionResult result = runTasksSuccessfully('tasks')
+        String result = resolve('com.palantir.sls-packaging:gradle-sls-packaging')
 
         then:
-        result.success
-
+        result == 'com.palantir.sls-packaging:gradle-sls-packaging:7.69.0'
     }
 
     def 'test only group'() {
-
         when:
-        ExecutionResult result = runTasksSuccessfully('tasks')
+        String result = resolve('com.palantir.sls-packaging:something-bogus')
 
         then:
-        result.success
-
+        result == 'com.palantir.sls-packaging:something-bogus:7.69.0'
     }
 
     def 'test missing dep'() {
-        buildFile << """
-            buildscript {
-                repositories {
-                    mavenCentral()
-                }
-                dependencies {
-                    classpath '${resolve('com.palantir.sls-packaging:gradle-sls-packaging')}'
-                }
-            }
-        """
-
         when:
-        ExecutionResult result = runTasksWithFailure('tasks')
+        resolve('does-not-exist:foo')
 
         then:
-        !result.success
-
+        def e = thrown(IllegalArgumentException)
+        e.message.contains('No version found for does-not-exist:foo')
     }
 
 }
