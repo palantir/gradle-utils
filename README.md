@@ -148,3 +148,19 @@ private void emitValueInBuildScan(Project project, String name, String value) {
 ```
 implementation 'com.palantir.gradle.utils:develocity-adapter-utils:<version>'
 ```
+
+## `Integration Test Utilities`
+
+Utilities to reduce boilerplate in integration tests.
+
+1. TestDepVersions - keep versions of dependencies referenced in test files up to date with the versions declared in the project.  The class looks both at versions.lock and versions.props files to resolve dependencies.
+2. GradleTestVersions - Centralized place to list the versions of gradle that integrations tests should be run with.
+    NOTE: This is likely a temporary solution.  There are plans to more dynamically generate this using a gradle plugin + extension so that different organizations can easily override based on their own requirements.  For example, one organization may want to maintain compatibility with gradle 7 while another may drop gradle 7 support but add testing against gradle 9.  We plan to create a gradle plugin that will set default versions but allow others to override in a plugin of their own.
+
+
+### Dependency
+
+```
+implementation 'com.palantir.gradle.utils:integration-test-utils:<version>'
+```
+

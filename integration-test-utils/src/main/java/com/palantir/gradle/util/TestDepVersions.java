@@ -24,8 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -34,13 +32,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * Utility class with two purposes related to test versions.
- * 1. Keep versions of dependencies referenced in test files up to date with the versions declared in the project.
- * 2. Maintain and update canonical list versions of gradle to test against.  This helps verify that a plugin is both
- * backwards and forwards compatible.
- *
- * EXAMPLES
- * When putting a dependency in a build file that is generated in an integration test:
+ * Utility class to keep versions of dependencies referenced in test files up to date with the versions declared in
+ * the project.  The class looks both at versions.lock and versions.props files to resolve dependencies.
  *
  * {@code
  *    import static com.palantir.test.TestDepVersions.resolve
@@ -61,25 +54,8 @@ import java.util.stream.Stream;
  *         }
  *         """.stripIndent(true)
  *  }
- *
- *  When testing against different versions of gradle:
- *  {@code
- *     @Unroll
- *     def 'runs on version of gradle: #version'() {
- *         when:
- *         gradleVersion = version
- *
- *         then:
- *         ExecutionResult result = runTasksSuccessfully('checkConjureBackCompat')
- *
- *         where:
- *         version << TestDepVersions.GRADLE_VERSIONS
- *     }
- *  }
  */
 public final class TestDepVersions {
-
-    static final List<String> GRADLE_VERSIONS = Arrays.asList("7.6.4", "8.5");
 
     private static final String PROPS_FILE = "versions.props";
     private static final Pattern PROPS_FILE_LINE = Pattern.compile("(.*?)(:\\*)?\\s*=\\s*(.+)");
