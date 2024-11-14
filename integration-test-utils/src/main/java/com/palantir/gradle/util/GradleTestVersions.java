@@ -30,7 +30,7 @@ import java.util.List;
  *         gradleVersion = version
  *
  *         then:
- *         ExecutionResult result = runTasksSuccessfully('checkConjureBackCompat')
+ *         ExecutionResult result = runTasksSuccessfully('someTask')
  *
  *         where:
  *         version << TestDepVersions.GRADLE_VERSIONS
