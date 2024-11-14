@@ -1,0 +1,5 @@
+type: feature
+feature:
+  description: Integration Test Utilities
+  links:
+  - https://github.com/palantir/gradle-utils/pull/265
