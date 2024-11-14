@@ -1,6 +1,13 @@
 # Run ./gradlew writeVersionsLocks to regenerate this file
+com.google.code.findbugs:jsr305:3.0.2 (2 constraints: 1d0fb186)
+com.google.errorprone:error_prone_annotations:2.28.0 (2 constraints: 830f2ca1)
+com.google.guava:failureaccess:1.0.2 (1 constraints: 150ae2b4)
+com.google.guava:guava:33.3.1-jre (1 constraints: aa067753)
+com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
+com.google.j2objc:j2objc-annotations:3.0.0 (1 constraints: 150aeab4)
 com.gradle:develocity-gradle-plugin-adapters:1.0.2 (1 constraints: 0505f235)
 org.apache.commons:commons-lang3:3.17.0 (1 constraints: 3d054a3b)
+org.checkerframework:checker-qual:3.48.2 (2 constraints: 8e0ff4a2)
 org.immutables:value:2.10.1 (1 constraints: 3605303b)
 
 [Test dependencies]
