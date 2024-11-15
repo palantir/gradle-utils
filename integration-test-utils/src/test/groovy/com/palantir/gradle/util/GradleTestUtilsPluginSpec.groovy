@@ -75,8 +75,10 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
                 }
 
                 def 'someTest'() {
+                    given:
+                    runTasks('writeVersionLocks')
                     when:
-                    def result = runTasks('dependencies')
+                    def result = runTasks('test')
 
                     then:
                     println "============std error follows============"
