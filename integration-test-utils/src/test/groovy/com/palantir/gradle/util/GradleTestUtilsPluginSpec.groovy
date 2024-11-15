@@ -30,7 +30,20 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
         setup:
         //language=gradle
         buildFile.text = """
+            buildscript {
+                repositories {
+                    mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+                    gradlePluginPortal() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+                }
+            
+                dependencies {
+                    classpath 'com.palantir.gradle.externalpublish:gradle-external-publish-plugin:1.19.0'
+                    classpath 'com.gradle.publish:plugin-publish-plugin:1.3.0'
+                }
+            }
+
             apply plugin: 'groovy'
+            apply plugin: 'com.palantir.external-publish-gradle-plugin'
             apply plugin: 'com.palantir.gradle.integration-test-utils'
             
             repositories {
@@ -45,12 +58,12 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
         """.stripIndent(true)
 
         //language=groovy
-        file('src/test/groovy/com/testing/HelloWorldTest.groovy') << '''
+        file('src/test/groovy/com/testing/HelloWorldSpec.groovy') << '''
             package com.testing
 
             import nebula.test.IntegrationSpec
 
-            class HelloWorldTest extends IntegrationSpec {
+            class HelloWorldSpec extends IntegrationSpec {
                 def setup() {
                     //language=gradle
                     buildFile << """
@@ -68,7 +81,7 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
                     """.stripIndent(true)
                 }
 
-                def someTest() {
+                def 'someTest'() {
                     when:
                     def result = runTasks('dependencies')
 
@@ -78,6 +91,8 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
                 }
             }
         '''.stripIndent(true)
+
+        //writeUnitTest()
 
         when:
         def result = runTasks('test')
