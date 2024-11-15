@@ -28,6 +28,7 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
 
     def 'ignoreDeprecations automatically set'() {
         setup:
+        System.setProperty('ignoreDeprecations', 'true')
         //language=gradle
         buildFile.text = """
             apply plugin: 'groovy'
@@ -39,9 +40,10 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
 
             dependencies {
                 implementation gradleApi()
-                //implementation gradleTestKit()
+
                 testImplementation '${resolve("org.junit.jupiter:junit-jupiter")}'
                 testImplementation '${resolve("com.netflix.nebula:nebula-test")}'
+                //testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
             }
             tasks.withType(Test) {
                 useJUnitPlatform()
@@ -77,7 +79,10 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
                     def result = runTasks('dependencies')
 
                     then:
-                    println result.output
+                    println "============std error follows============"
+                    println result.standardError
+                    println "============std out follows============"
+                    println result.standardOutput
                     result.success
                 }
             }
