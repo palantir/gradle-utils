@@ -21,18 +21,15 @@ import nebula.test.IntegrationSpec
 import static com.palantir.gradle.util.TestDepVersions.resolve
 
 class GradleTestUtilsPluginSpec extends IntegrationSpec {
+
+    public static final String DEPRECATION_ERROR_MESSAGE_FROM_NEBULA = 'Deprecation warnings were found (Set the ignoreDeprecations system property during the test to ignore)'
+
     def setup() {
         writeHelloWorld('com.testing')
-
-    }
-
-    def 'ignoreDeprecations automatically set'() {
-        setup:
         System.setProperty('ignoreDeprecations', 'true')
         //language=gradle
-        buildFile.text = """
+        buildFile << """
             apply plugin: 'groovy'
-            apply plugin: 'com.palantir.gradle.integration-test-utils'
             
             repositories {
                 mavenCentral()
@@ -72,11 +69,11 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
                         apply plugin: 'java'
                         apply plugin: 'com.palantir.consistent-versions'
                     """.stripIndent(true)
+                    
+                    file('versions.lock') << ''
                 }
 
                 def 'someTest'() {
-                    given:
-                    runTasks('writeVersionLocks')
                     when:
                     def result = runTasks('test')
 
@@ -89,39 +86,42 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
                 }
             }
         '''.stripIndent(true)
+    }
 
-        //language=groovy
-        file('src/test/groovy/com/testing/GenericSpec.groovy') << '''
-            package com.testing
-
-            import spock.lang.*
-
-            class GenericSpec extends Specification {
-                def setup() {
-                    println("setup is running")
-                }
-
-                def 'some test'() {
-                    when:
-                    def foo = 1
-
-                    then:
-                    foo == 1
-                }
-            }
-        '''.stripIndent(true)
-
-        //writeUnitTest()
-
+    /**
+     * this is just a sanity check test to verify that nebula behaves as expected in the default case.  That is, it
+     * will fail the test if there are gradle deprecation warnings.
+     */
+    def 'fails when plugin not applied'() {
         when:
         def result = runTasks('test')
 
         then:
-        println "************************************************std error follows******************************************"
-        println result.standardError
-        println "************************************************std out follows******************************************"
-        println result.standardOutput
+        result.standardOutput.contains('HelloWorldSpec > someTest FAILED')
+        result.standardOutput.contains(DEPRECATION_ERROR_MESSAGE_FROM_NEBULA)
+        !result.success
+    }
+
+    def 'ignoreDeprecations automatically set when plugin applied'() {
+        when:
+        def result = runTasks('test')
+
+        then: 'fails when plugin not applied'
+        result.standardOutput.contains('HelloWorldSpec > someTest FAILED')
+        result.standardOutput.contains(DEPRECATION_ERROR_MESSAGE_FROM_NEBULA)
+        !result.success
+
+        when: 'add the integration-test-utils plugin'
+        //language=gradle
+        buildFile << """
+            apply plugin: 'com.palantir.gradle.integration-test-utils'
+        """.stripIndent(true)
+
+        result = runTasks('test')
+
+        then:
         result.success
+        !result.standardOutput.contains(DEPRECATION_ERROR_MESSAGE_FROM_NEBULA)
     }
 
     def 'override gradle testing versions'() {
