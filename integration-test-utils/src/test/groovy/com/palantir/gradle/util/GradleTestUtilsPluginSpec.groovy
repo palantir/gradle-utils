@@ -22,45 +22,6 @@ import static com.palantir.gradle.util.TestDepVersions.resolve
 
 class GradleTestUtilsPluginSpec extends IntegrationSpec {
     def setup() {
-        TestDepVersions.setVersionsDir(projectDir.toPath())
-
-        //language=properties
-        file('versions.props') << """
-            com.palantir.sls-packaging:* = 7.69.0
-            # This version causes deprecation warnings in gradle 8 for gradle 9
-            com.palantir.gradle.consistentversions:gradle-consistent-versions = 2.27.0
-        """.stripIndent(true)
-        file('versions.lock') << """
-            com.palantir.sls-packaging:gradle-sls-packaging-api:7.69.0 (1 constraints: f2133970)
-            com.palantir.gradle.consistentversions:gradle-consistent-versions:2.27.0 (1 constraints: 3d05483b)
-        """.stripIndent(true)
-
-        //language=gradle
-        buildFile << """
-            buildscript {
-                repositories {
-                    mavenCentral()
-                }
-                dependencies {
-                    classpath '${resolve('com.palantir.sls-packaging:gradle-sls-packaging')}'
-                    classpath '${resolve('com.palantir.gradle.consistentversions:gradle-consistent-versions')}'
-                }
-            }
-
-            apply plugin: 'com.palantir.consistent-versions'
-
-            group = 'org.test'
-            version = '1.0.0'
-
-            apply plugin: 'java'
-            apply plugin: 'com.palantir.sls-java-service-distribution'
-
-            distribution {
-                serviceName 'sample-service'
-                mainClass 'com.testing.hello'
-            }
-        """.stripIndent(true)
-
         writeHelloWorld('com.testing')
 
     }
@@ -68,16 +29,65 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
     def 'ignoreDeprecations automatically set'() {
         setup:
         //language=gradle
-        buildFile << """
-            apply plugin: 'com.palantir.gradle-test-utils'
+        buildFile.text = """
+            apply plugin: 'groovy'
+            apply plugin: 'com.palantir.gradle.integration-test-utils'
+            
+            repositories {
+                mavenCentral()
+            }
+
+            dependencies {
+                implementation gradleApi()
+                testImplementation '${resolve("org.junit.jupiter:junit-jupiter")}'
+                testImplementation '${resolve("com.netflix.nebula:nebula-test")}'
+            }
         """.stripIndent(true)
 
+        //language=groovy
+        file('src/test/groovy/com/testing/HelloWorldTest.groovy') << '''
+            package com.testing
+
+            import nebula.test.IntegrationSpec
+
+            class HelloWorldTest extends IntegrationSpec {
+                def setup() {
+                    //language=gradle
+                    buildFile << """
+                        buildscript {
+                            repositories {
+                                mavenCentral()
+                            }
+                            dependencies {
+                                // This version causes deprecation warnings in gradle 8 for gradle 9
+                                classpath 'com.palantir.gradle.consistentversions:gradle-consistent-versions:2.27.0'
+                            }
+                        }
+                        apply plugin: 'java'
+                        apply plugin: 'com.palantir.consistent-versions'
+                    """.stripIndent(true)
+                }
+
+                def someTest() {
+                    when:
+                    def result = runTasks('dependencies')
+
+                    then:
+                    println result.output
+                    result.success
+                }
+            }
+        '''.stripIndent(true)
+
         when:
-        def result = runTasksSuccessfully('dependencies')
+        def result = runTasks('test')
 
         then:
-        println result.output
-        !result.output.contains('Deprecation warnings were found')
+        println "************************************************std error follows******************************************"
+        println result.standardError
+        println "************************************************std out follows******************************************"
+        println result.standardOutput
+        result.success
     }
 
     def 'override gradle testing versions'() {

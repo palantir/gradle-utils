@@ -20,7 +20,7 @@ gradlePlugin {
         gradleIntegrationTestUtils {
             id = 'com.palantir.gradle.integration-test-utils'
             displayName = 'Palantir Gradle Integration Test Utils'
-            implementationClass = 'com.palantir.gradle.utils.GradleTestUtilsPlugin'
+            implementationClass = 'com.palantir.gradle.util.GradleTestUtilsPlugin'
             description = 'A plugin that helps manage integration tests in Gradle plugins'
             tags.set(['gradle-plugin', 'testing'])
         }

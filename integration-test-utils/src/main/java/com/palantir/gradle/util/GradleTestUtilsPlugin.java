@@ -16,8 +16,6 @@
 
 package com.palantir.gradle.util;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.tasks.testing.Test;
@@ -26,23 +24,19 @@ public abstract class GradleTestUtilsPlugin implements Plugin<Project> {
 
     @Override
     public void apply(Project project) {
-        // add task to write the version resource file
-        // then update GradleTestVersions to read that file
+        GradleTestUtilsExtension testUtilsExt =
+                project.getExtensions().create("gradleTestUtils", GradleTestUtilsExtension.class);
 
         project.getTasks().withType(Test.class).configureEach(test -> {
             // add system properties when running tests
-            GradleTestUtilsExtension testUtilsExt = project.getExtensions().getByType(GradleTestUtilsExtension.class);
             String versions = String.join(",", testUtilsExt.getGradleVersions().get());
-            Map<String, String> systemProperties = new HashMap<>();
-            systemProperties.put(GradleTestVersions.TEST_GRADLE_VERSIONS_SYSTEM_PROPERTY, versions);
+            test.systemProperty(GradleTestVersions.TEST_GRADLE_VERSIONS_SYSTEM_PROPERTY, versions);
 
-            if (testUtilsExt.ignoreGradleDeprecations().get()) {
+            if (testUtilsExt.getIgnoreGradleDeprecations().get()) {
                 // from
                 // https://github.com/nebula-plugins/nebula-test/blob/main/src/main/groovy/nebula/test/IntegrationBase.groovy
-                systemProperties.put("ignoreDeprecations", "true");
+                test.systemProperty("ignoreDeprecations", "true");
             }
-
-            test.systemProperties(systemProperties);
         });
     }
 }

@@ -24,12 +24,12 @@ public abstract class GradleTestUtilsExtension {
      * Whether to set the ignoreDeprecations system property when running tests.  This is for nebula tests that will
      * fail if there are gradle deprecations.
      */
-    public abstract Property<Boolean> ignoreGradleDeprecations();
+    public abstract Property<Boolean> getIgnoreGradleDeprecations();
 
     public abstract SetProperty<String> getGradleVersions();
 
     public GradleTestUtilsExtension() {
-        ignoreGradleDeprecations().convention(true);
+        getIgnoreGradleDeprecations().convention(true);
         // TODO: Should this be the latest gradle 8, or maybe whatever this plugin is compiled against?
         // or is this the set of "milestone" versions and we dynamically add the version of the consuming project?
         getGradleVersions().convention(GradleTestVersions.DEFAULT_TEST_GRADLE_VERSIONS);
