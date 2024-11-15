@@ -30,20 +30,7 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
         setup:
         //language=gradle
         buildFile.text = """
-            buildscript {
-                repositories {
-                    mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
-                    gradlePluginPortal() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
-                }
-            
-                dependencies {
-                    classpath 'com.palantir.gradle.externalpublish:gradle-external-publish-plugin:1.19.0'
-                    classpath 'com.gradle.publish:plugin-publish-plugin:1.3.0'
-                }
-            }
-
             apply plugin: 'groovy'
-            apply plugin: 'com.palantir.external-publish-gradle-plugin'
             apply plugin: 'com.palantir.gradle.integration-test-utils'
             
             repositories {
@@ -52,8 +39,12 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
 
             dependencies {
                 implementation gradleApi()
+                //implementation gradleTestKit()
                 testImplementation '${resolve("org.junit.jupiter:junit-jupiter")}'
                 testImplementation '${resolve("com.netflix.nebula:nebula-test")}'
+            }
+            tasks.withType(Test) {
+                useJUnitPlatform()
             }
         """.stripIndent(true)
 
@@ -88,6 +79,27 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
                     then:
                     println result.output
                     result.success
+                }
+            }
+        '''.stripIndent(true)
+
+        //language=groovy
+        file('src/test/groovy/com/testing/GenericSpec.groovy') << '''
+            package com.testing
+
+            import spock.lang.*
+
+            class GenericSpec extends Specification {
+                def setup() {
+                    println("setup is running")
+                }
+
+                def 'some test'() {
+                    when:
+                    def foo = 1
+
+                    then:
+                    foo == 1
                 }
             }
         '''.stripIndent(true)
