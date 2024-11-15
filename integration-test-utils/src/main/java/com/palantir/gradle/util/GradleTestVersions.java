@@ -16,8 +16,12 @@
 
 package com.palantir.gradle.util;
 
+import com.google.common.base.Suppliers;
+import com.google.common.collect.ImmutableSet;
 import java.util.Arrays;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * Utility class to maintain and update canonical list versions of gradle to test against.  This helps verify that a
@@ -38,10 +42,26 @@ import java.util.List;
  *  }
  */
 public final class GradleTestVersions {
-    static final List<String> GRADLE_VERSIONS = Arrays.asList("7.6.4", "8.8");
+    static final String TEST_GRADLE_VERSIONS_SYSTEM_PROPERTY = "TEST_GRADLE_VERSIONS";
+    static final Set<String> DEFAULT_TEST_GRADLE_VERSIONS = new LinkedHashSet<>(Arrays.asList("7.6.4", "8.8"));
 
-    public static List<String> getGradleVersions() {
-        return GRADLE_VERSIONS;
+    private static final Supplier<Set<String>> gradleVersionsSupplier =
+            Suppliers.memoize(GradleTestVersions::loadVersions);
+
+    public static Set<String> getGradleVersionsForTests() {
+        return gradleVersionsSupplier.get();
+    }
+
+    private static Set<String> loadVersions() {
+        Set<String> result = new LinkedHashSet<>();
+
+        if (System.getProperty(TEST_GRADLE_VERSIONS_SYSTEM_PROPERTY) == null) {
+            result.addAll(DEFAULT_TEST_GRADLE_VERSIONS);
+        } else {
+            result.addAll(Arrays.asList(
+                    System.getProperty(TEST_GRADLE_VERSIONS_SYSTEM_PROPERTY).split(",")));
+        }
+        return ImmutableSet.copyOf(result);
     }
 
     private GradleTestVersions() {}

@@ -1,6 +1,7 @@
 apply plugin: 'java-library'
 apply plugin: 'com.palantir.external-publish-jar'
 apply plugin: 'groovy'
+apply plugin: 'com.palantir.external-publish-gradle-plugin'
 
 dependencies {
     implementation gradleApi()
@@ -9,4 +10,19 @@ dependencies {
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'com.netflix.nebula:nebula-test'
+}
+
+gradlePlugin {
+    website = 'https://github.com/palantir/gradle-utils'
+    vcsUrl = 'https://github.com/palantir/gradle-utils'
+
+    plugins {
+        gradleIntegrationTestUtils {
+            id = 'com.palantir.gradle.integration-test-utils'
+            displayName = 'Palantir Gradle Integration Test Utils'
+            implementationClass = 'com.palantir.gradle.utils.GradleTestUtilsPlugin'
+            description = 'A plugin that helps manage integration tests in Gradle plugins'
+            tags.set(['gradle-plugin', 'testing'])
+        }
+    }
 }
