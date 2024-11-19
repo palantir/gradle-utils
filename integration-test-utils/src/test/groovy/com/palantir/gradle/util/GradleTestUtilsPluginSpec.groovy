@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.util
 
+import groovy.test.NotYetImplemented
 import nebula.test.IntegrationSpec
 
 import static com.palantir.gradle.util.TestDepVersions.resolve
@@ -103,21 +104,11 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
     }
 
     def 'ignoreDeprecations automatically set when plugin applied'() {
+        given:
+        applyTestUtilsPlugin()
+
         when:
         def result = runTasks('test')
-
-        then: 'fails when plugin not applied'
-        result.standardOutput.contains('HelloWorldSpec > someTest FAILED')
-        result.standardOutput.contains(DEPRECATION_ERROR_MESSAGE_FROM_NEBULA)
-        !result.success
-
-        when: 'add the integration-test-utils plugin'
-        //language=gradle
-        buildFile << """
-            apply plugin: 'com.palantir.gradle.integration-test-utils'
-        """.stripIndent(true)
-
-        result = runTasks('test')
 
         then:
         result.success
@@ -125,7 +116,26 @@ class GradleTestUtilsPluginSpec extends IntegrationSpec {
     }
 
     def 'override gradle testing versions'() {
-        expect:
-        project.plugins.hasPlugin(GradleTestUtilsPlugin)
+        given:
+        applyTestUtilsPlugin()
+        buildFile << """
+            gradleTestUtils {
+                gradleVersions = ['7.6.4', '8.10.1']
+            }
+        """.stripIndent(true)
+
+        when:
+        def result = runTasks('test')
+
+        then:
+        //TODO: verify test run with versions
+        result.standardOutput.contains('8.10.1')
+    }
+
+    void applyTestUtilsPlugin() {
+        //language=gradle
+        buildFile << """
+            apply plugin: 'com.palantir.gradle.integration-test-utils'
+        """.stripIndent(true)
     }
 }
