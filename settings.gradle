@@ -16,3 +16,5 @@ include 'gutil'
 include 'lazily-configured-mapping'
 include 'circleci-artifacts'
 include 'develocity-adapter-utils'
+include 'platform'
+
