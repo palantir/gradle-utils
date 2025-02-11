@@ -64,7 +64,7 @@ public final class CurrentOs {
             // reasonable glibc, which exits with code 0 and prints to stdout. So we concat stdout and stderr together,
             // check the output for the correct strings, then fail if we can't find it.
             String lowercaseOutput = (readAllInput(process.getInputStream()) + "\n"
-                    + readAllInput(process.getErrorStream()))
+                            + readAllInput(process.getErrorStream()))
                     .toLowerCase(Locale.ROOT);
 
             int secondsToWait = 5;
@@ -96,11 +96,10 @@ public final class CurrentOs {
 
     public static String readAllInput(InputStream inputStream) {
         try (Stream<String> lines =
-                     new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()) {
+                new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()) {
             return lines.collect(Collectors.joining("\n"));
         }
     }
 
-    private CurrentOs() {
-    }
+    private CurrentOs() {}
 }
