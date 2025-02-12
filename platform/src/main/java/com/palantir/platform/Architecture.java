@@ -18,13 +18,14 @@ package com.palantir.platform;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 
-public enum Os {
-    MACOS,
-    LINUX_GLIBC,
-    LINUX_MUSL,
-    WINDOWS;
+public enum Architecture {
+    X86,
+    X86_64,
+    AARCH64;
 
     @Override
     public String toString() {
@@ -36,25 +37,30 @@ public enum Os {
         return UiNames.uiName(this);
     }
 
-    public Optional<String> glibcOrMuslDistribution() {
-        switch (this) {
-            case LINUX_MUSL:
-                return Optional.of("musl");
-            case LINUX_GLIBC:
-                return Optional.of("glibc");
-            case MACOS:
-            case WINDOWS:
-                return Optional.empty();
-        }
-        throw new IllegalStateException("Unsupported OS: " + this);
-    }
-
-    public static Optional<Os> fromString(String osUiName) {
-        return UiNames.fromString(values(), osUiName);
+    public static Optional<Architecture> fromString(String archUiName) {
+        return UiNames.fromString(values(), archUiName);
     }
 
     @JsonCreator
-    public static Os fromStringThrowing(String osUiName) {
-        return UiNames.fromStringThrowing(Os.class, values(), osUiName);
+    public static Architecture fromStringThrowing(String archUiName) {
+        return UiNames.fromStringThrowing(Architecture.class, values(), archUiName);
+    }
+
+    public static Architecture get() {
+        String osArch = System.getProperty("os.arch").toLowerCase(Locale.ROOT);
+
+        if (Set.of("x86_64", "x64", "amd64").contains(osArch)) {
+            return Architecture.X86_64;
+        }
+
+        if (Set.of("arm", "arm64", "aarch64").contains(osArch)) {
+            return Architecture.AARCH64;
+        }
+
+        if (Set.of("x86", "i686").contains(osArch)) {
+            return Architecture.X86;
+        }
+
+        throw new UnsupportedOperationException("Cannot get architecture for " + osArch);
     }
 }

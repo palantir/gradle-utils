@@ -16,6 +16,8 @@
 
 package com.palantir.platform;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,23 +25,60 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public final class CurrentOs {
+public enum OperatingSystem {
+    MACOS,
+    LINUX_GLIBC,
+    LINUX_MUSL,
+    WINDOWS;
 
-    public static Os get() {
+    @Override
+    public String toString() {
+        return uiName();
+    }
+
+    @JsonValue
+    public final String uiName() {
+        return UiNames.uiName(this);
+    }
+
+    public Optional<String> glibcOrMuslDistribution() {
+        switch (this) {
+            case LINUX_MUSL:
+                return Optional.of("musl");
+            case LINUX_GLIBC:
+                return Optional.of("glibc");
+            case MACOS:
+            case WINDOWS:
+                return Optional.empty();
+        }
+        throw new IllegalStateException("Unsupported OS: " + this);
+    }
+
+    public static Optional<OperatingSystem> fromString(String osUiName) {
+        return UiNames.fromString(values(), osUiName);
+    }
+
+    @JsonCreator
+    public static OperatingSystem fromStringThrowing(String osUiName) {
+        return UiNames.fromStringThrowing(OperatingSystem.class, values(), osUiName);
+    }
+
+    public static OperatingSystem get() {
         String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
 
         if (osName.startsWith("mac")) {
-            return Os.MACOS;
+            return OperatingSystem.MACOS;
         }
 
         if (osName.startsWith("windows")) {
-            return Os.WINDOWS;
+            return OperatingSystem.WINDOWS;
         }
 
         if (osName.startsWith("linux")) {
@@ -49,12 +88,12 @@ public final class CurrentOs {
         throw new UnsupportedOperationException("Cannot get platform for operating system " + osName);
     }
 
-    private static Os linuxLibcFromLdd() {
+    private static OperatingSystem linuxLibcFromLdd() {
         return linuxLibcFromLdd(UnaryOperator.identity());
     }
 
     // Visible for testing
-    public static Os linuxLibcFromLdd(UnaryOperator<List<String>> argTransformer) {
+    private static OperatingSystem linuxLibcFromLdd(UnaryOperator<List<String>> argTransformer) {
         try {
             Process process = new ProcessBuilder()
                     .command(argTransformer.apply(List.of("ldd", "--version")))
@@ -64,7 +103,7 @@ public final class CurrentOs {
             // reasonable glibc, which exits with code 0 and prints to stdout. So we concat stdout and stderr together,
             // check the output for the correct strings, then fail if we can't find it.
             String lowercaseOutput = (readAllInput(process.getInputStream()) + "\n"
-                            + readAllInput(process.getErrorStream()))
+                    + readAllInput(process.getErrorStream()))
                     .toLowerCase(Locale.ROOT);
 
             int secondsToWait = 5;
@@ -74,11 +113,11 @@ public final class CurrentOs {
             }
 
             if (lowercaseOutput.contains("glibc") || lowercaseOutput.contains("gnu libc")) {
-                return Os.LINUX_GLIBC;
+                return OperatingSystem.LINUX_GLIBC;
             }
 
             if (lowercaseOutput.contains("musl")) {
-                return Os.LINUX_MUSL;
+                return OperatingSystem.LINUX_MUSL;
             }
 
             if (!Set.of(0, 1).contains(process.exitValue())) {
@@ -94,12 +133,10 @@ public final class CurrentOs {
         }
     }
 
-    public static String readAllInput(InputStream inputStream) {
+    private static String readAllInput(InputStream inputStream) {
         try (Stream<String> lines =
-                new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()) {
+                     new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()) {
             return lines.collect(Collectors.joining("\n"));
         }
     }
-
-    private CurrentOs() {}
 }

@@ -22,7 +22,7 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public final class UiNames {
+final class UiNames {
     public static String uiName(Enum<?> enumValue) {
         return enumValue.name().toLowerCase(Locale.ROOT).replace('_', '-');
     }
@@ -43,5 +43,6 @@ public final class UiNames {
                         Arrays.stream(enumValues).map(UiNames::uiName).collect(Collectors.toList()))));
     }
 
-    private UiNames() {}
+    private UiNames() {
+    }
 }
