@@ -43,6 +43,5 @@ final class UiNames {
                         Arrays.stream(enumValues).map(UiNames::uiName).collect(Collectors.toList()))));
     }
 
-    private UiNames() {
-    }
+    private UiNames() {}
 }
