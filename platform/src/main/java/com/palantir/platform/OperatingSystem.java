@@ -1,0 +1,142 @@
+/*
+ * (c) Copyright 2025 Palantir Technologies Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.palantir.platform;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+public enum OperatingSystem {
+    MACOS,
+    LINUX_GLIBC,
+    LINUX_MUSL,
+    WINDOWS;
+
+    @Override
+    public String toString() {
+        return uiName();
+    }
+
+    @JsonValue
+    public final String uiName() {
+        return UiNames.uiName(this);
+    }
+
+    public Optional<String> glibcOrMuslDistribution() {
+        switch (this) {
+            case LINUX_MUSL:
+                return Optional.of("musl");
+            case LINUX_GLIBC:
+                return Optional.of("glibc");
+            case MACOS:
+            case WINDOWS:
+                return Optional.empty();
+        }
+        throw new IllegalStateException("Unsupported OS: " + this);
+    }
+
+    public static Optional<OperatingSystem> fromString(String osUiName) {
+        return UiNames.fromString(values(), osUiName);
+    }
+
+    @JsonCreator
+    public static OperatingSystem fromStringThrowing(String osUiName) {
+        return UiNames.fromStringThrowing(OperatingSystem.class, values(), osUiName);
+    }
+
+    public static OperatingSystem get() {
+        String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+
+        if (osName.startsWith("mac")) {
+            return OperatingSystem.MACOS;
+        }
+
+        if (osName.startsWith("windows")) {
+            return OperatingSystem.WINDOWS;
+        }
+
+        if (osName.startsWith("linux")) {
+            return linuxLibcFromLdd();
+        }
+
+        throw new UnsupportedOperationException("Cannot get platform for operating system " + osName);
+    }
+
+    private static OperatingSystem linuxLibcFromLdd() {
+        return linuxLibcFromLdd(UnaryOperator.identity());
+    }
+
+    // Visible for testing
+    private static OperatingSystem linuxLibcFromLdd(UnaryOperator<List<String>> argTransformer) {
+        try {
+            Process process = new ProcessBuilder()
+                    .command(argTransformer.apply(List.of("ldd", "--version")))
+                    .start();
+
+            // Extremely frustratingly, musl `ldd` exits with code 1 on --version, and prints to stderr, unlike the more
+            // reasonable glibc, which exits with code 0 and prints to stdout. So we concat stdout and stderr together,
+            // check the output for the correct strings, then fail if we can't find it.
+            String lowercaseOutput = (readAllInput(process.getInputStream()) + "\n"
+                            + readAllInput(process.getErrorStream()))
+                    .toLowerCase(Locale.ROOT);
+
+            int secondsToWait = 5;
+            if (!process.waitFor(secondsToWait, TimeUnit.SECONDS)) {
+                throw new RuntimeException(
+                        "ldd failed to run within " + secondsToWait + " seconds. Output: " + lowercaseOutput);
+            }
+
+            if (lowercaseOutput.contains("glibc") || lowercaseOutput.contains("gnu libc")) {
+                return OperatingSystem.LINUX_GLIBC;
+            }
+
+            if (lowercaseOutput.contains("musl")) {
+                return OperatingSystem.LINUX_MUSL;
+            }
+
+            if (!Set.of(0, 1).contains(process.exitValue())) {
+                throw new RuntimeException(String.format(
+                        "Failed to run ldd - exited with exit code %d. Output: %s.",
+                        process.exitValue(), lowercaseOutput));
+            }
+
+            throw new UnsupportedOperationException(
+                    "Cannot work out libc used by this OS. ldd output was: " + lowercaseOutput);
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static String readAllInput(InputStream inputStream) {
+        try (Stream<String> lines =
+                new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8)).lines()) {
+            return lines.collect(Collectors.joining("\n"));
+        }
+    }
+}
