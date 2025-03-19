@@ -89,7 +89,7 @@ class LazilyConfiguredMappingTest {
             this.number = number;
         }
 
-        @SuppressWarnings("for-rollout:EqualsUnsafeCast")
+        @SuppressWarnings({"for-rollout:EqualsUnsafeCast", "for-rollout:RemoveRolloutSuppressions"})
         @Override
         public boolean equals(Object obj) {
             return number == ((Extension) obj).number;
