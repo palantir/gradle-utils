@@ -1,6 +1,6 @@
 # Run ./gradlew writeVersionsLocks to regenerate this file
 com.fasterxml.jackson.core:jackson-annotations:2.18.3 (1 constraints: 40054a3b)
-com.gradle:develocity-gradle-plugin-adapters:1.2 (1 constraints: a7041c2c)
+com.gradle:develocity-gradle-plugin-adapters:1.2.1 (1 constraints: 0605f735)
 org.apache.commons:commons-lang3:3.17.0 (1 constraints: 3d054a3b)
 org.immutables:value:2.10.1 (1 constraints: 3605303b)
 
