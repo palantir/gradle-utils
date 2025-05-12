@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: '`isCi` checks the CI env var value'
+  links:
+  - https://github.com/palantir/gradle-utils/pull/360
