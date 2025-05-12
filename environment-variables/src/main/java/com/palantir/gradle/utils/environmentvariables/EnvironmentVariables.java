@@ -27,7 +27,7 @@ public abstract class EnvironmentVariables {
     protected abstract ProviderFactory getProviderFactory();
 
     public final Provider<Boolean> isCi() {
-        return envVarOrFromTestingProperty("CI").map(_value -> true).orElse(false);
+        return envVarOrFromTestingProperty("CI").map(Boolean::parseBoolean).orElse(false);
     }
 
     public final Provider<Boolean> isCircleNode0OrLocal() {

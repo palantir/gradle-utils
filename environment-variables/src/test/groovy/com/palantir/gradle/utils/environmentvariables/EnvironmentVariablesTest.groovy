@@ -32,6 +32,7 @@ class EnvironmentVariablesTest extends IntegrationSpec {
             def variables = objects.newInstance(TestClass).environmentVariables
             println('Variable: ' + variables.envVarOrFromTestingProperty('VARIABLE').getOrNull())
             println('isCircleNode0OrLocal: ' + variables.isCircleNode0OrLocal().getOrNull())
+            println('isCi: ' + variables.isCi().getOrNull())
         '''.stripIndent(true)
     }
 
@@ -77,6 +78,33 @@ class EnvironmentVariablesTest extends IntegrationSpec {
 
         then:
         stdout.contains("isCircleNode0OrLocal: true")
+    }
+
+    def 'isCi returns true on circle node'() {
+        when:
+        def stdout = runTasksSuccessfully('help',
+                '-P__TESTING=true', '-P__TESTING_CI=true').standardOutput
+
+        then:
+        stdout.contains("isCi: true")
+    }
+
+    def 'isCi returns false locally'() {
+        when:
+        def stdout = runTasksSuccessfully('help',
+                '-P__TESTING=true').standardOutput
+
+        then:
+        stdout.contains("isCi: false")
+    }
+
+    def 'isCi returns false if CI=false'() {
+        when:
+        def stdout = runTasksSuccessfully('help',
+                '-P__TESTING=true', '-P__TESTING_CI=false').standardOutput
+
+        then:
+        stdout.contains("isCi: false")
     }
 
 }
