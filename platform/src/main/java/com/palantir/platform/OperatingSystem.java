@@ -48,6 +48,7 @@ public enum OperatingSystem {
         return UiNames.uiName(this);
     }
 
+    @SuppressWarnings("for-rollout:StatementSwitchToExpressionSwitch")
     public Optional<String> glibcOrMuslDistribution() {
         switch (this) {
             case LINUX_MUSL:
@@ -93,6 +94,7 @@ public enum OperatingSystem {
     }
 
     // Visible for testing
+    @SuppressWarnings({"for-rollout:DefaultLocale", "for-rollout:ThrowSpecificExceptions"})
     private static OperatingSystem linuxLibcFromLdd(UnaryOperator<List<String>> argTransformer) {
         try {
             Process process = new ProcessBuilder()
