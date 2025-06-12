@@ -30,7 +30,6 @@ public abstract class CircleCiArtifacts {
     @Nested
     protected abstract EnvironmentVariables getVariables();
 
-    @SuppressWarnings("for-rollout:UnnecessarilyVisible")
     @Inject
     protected abstract ProjectLayout getProjectLayout();
 

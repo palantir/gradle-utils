@@ -27,7 +27,6 @@ import org.gradle.api.artifacts.result.UnresolvedDependencyResult;
 import org.gradle.api.attributes.Attribute;
 
 public final class DependencyGraphUtils {
-    @SuppressWarnings("for-rollout:ThrowSpecificExceptions")
     public static Set<ResolvedComponentResult> allComponentResultsFromRoot(ResolvedComponentResult rootResult) {
         Set<ResolvedComponentResult> seen = new HashSet<>();
         Queue<ResolvedComponentResult> next = new ArrayDeque<>();
