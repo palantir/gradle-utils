@@ -94,7 +94,6 @@ public enum OperatingSystem {
     }
 
     // Visible for testing
-    @SuppressWarnings("for-rollout:DefaultLocale")
     private static OperatingSystem linuxLibcFromLdd(UnaryOperator<List<String>> argTransformer) {
         try {
             Process process = new ProcessBuilder()
