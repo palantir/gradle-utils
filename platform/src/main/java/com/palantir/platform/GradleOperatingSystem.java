@@ -51,9 +51,9 @@ public abstract class GradleOperatingSystem {
             spec.setIgnoreExitValue(true);
         });
 
-        String lowercaseOutput = (result.getStandardOutput().toString() + "\n"
-                        + result.getStandardError().toString())
-                .toLowerCase(Locale.ROOT);
+        String stdout = result.getStandardOutput().getAsText().get().trim();
+        String stderr = result.getStandardError().getAsText().get().trim();
+        String lowercaseOutput = (stdout + "\n" + stderr).toLowerCase(Locale.ROOT);
 
         if (lowercaseOutput.contains("glibc") || lowercaseOutput.contains("gnu libc")) {
             return OperatingSystem.LINUX_GLIBC;
