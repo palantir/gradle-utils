@@ -9,9 +9,3 @@ dependencies {
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
-
-test {
-    jvmArgs += [
-            '--add-opens', 'java.base/java.lang=ALL-UNNAMED'
-    ]
-}
