@@ -1,8 +1,18 @@
 apply plugin: 'java-library'
+apply plugin: 'groovy'
 apply plugin: 'com.palantir.external-publish-jar'
 
 dependencies {
     implementation gradleApi()
 
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
+
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+test {
+    jvmArgs += [
+            '--add-opens', 'java.base/java.lang=ALL-UNNAMED'
+    ]
 }
