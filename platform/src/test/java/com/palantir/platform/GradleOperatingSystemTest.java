@@ -24,14 +24,14 @@ import org.gradle.api.provider.ProviderFactory;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.Test;
 
-public class GradleOperationSystemTest {
+public class GradleOperatingSystemTest {
 
     @Test
     public void canInstantiateAndCallGet() {
         Project project = ProjectBuilder.builder().build();
         ProviderFactory providerFactory = project.getProviders();
 
-        GradleOperationSystem gradleOperationSystem = new GradleOperationSystem() {
+        GradleGradleOperatingSystem gradleOperatingSystem = new GradleGradleOperatingSystem() {
             @Override
             @Inject
             protected ProviderFactory getProviderFactory() {
@@ -39,7 +39,7 @@ public class GradleOperationSystemTest {
             }
         };
 
-        OperatingSystem result = gradleOperationSystem.get();
+        OperatingSystem result = gradleOperatingSystem.get();
 
         assertThat(result)
                 .as("OperatingSystem should not be null and should be of type OperatingSystem")
