@@ -64,12 +64,12 @@ public abstract class GradleGradleOperatingSystem {
         }
 
         int exitValue = result.getResult().get().getExitValue();
-        if (exitValue != 0 && exitValue != 1) {
-            throw new RuntimeException(String.format(
-                    "Failed to run ldd - exited with exit code %d. Output: %s.", exitValue, lowercaseOutput));
+        if (exitValue == 0 || exitValue == 1) {
+            throw new UnsupportedOperationException(
+                    "Cannot work out libc used by this OS. ldd output was: " + lowercaseOutput);
         }
 
-        throw new UnsupportedOperationException(
-                "Cannot work out libc used by this OS. ldd output was: " + lowercaseOutput);
+        throw new RuntimeException(
+                String.format("Failed to run ldd - exited with exit code %d. Output: %s.", exitValue, lowercaseOutput));
     }
 }
