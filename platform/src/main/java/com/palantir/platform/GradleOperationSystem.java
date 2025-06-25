@@ -47,7 +47,7 @@ public abstract class GradleOperationSystem {
 
     private OperatingSystem linuxLibcFromLdd() {
         ExecOutput result = getProviderFactory().exec(spec -> {
-            spec.commandLine("git", "--version");
+            spec.commandLine("ldd", "--version");
             spec.setIgnoreExitValue(true);
         });
 
