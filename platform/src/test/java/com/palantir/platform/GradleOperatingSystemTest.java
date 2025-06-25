@@ -32,7 +32,7 @@ public class GradleOperatingSystemTest {
 
         GradleOperatingSystem gradleOperatingSystem = objectFactory.newInstance(GradleOperatingSystem.class);
 
-        OperatingSystem result = gradleOperatingSystem.get();
+        OperatingSystem result = gradleOperatingSystem.getOperatingSystem().get();
 
         assertThat(result)
                 .as("OperatingSystem should not be null and should be of type OperatingSystem")

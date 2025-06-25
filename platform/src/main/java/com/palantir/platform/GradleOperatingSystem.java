@@ -18,6 +18,7 @@ package com.palantir.platform;
 
 import java.util.Locale;
 import javax.inject.Inject;
+import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.process.ExecOutput;
 
@@ -26,23 +27,26 @@ public abstract class GradleOperatingSystem {
     @SuppressWarnings("JavaxInjectOnAbstractMethod")
     protected abstract ProviderFactory getProviderFactory();
 
-    public final OperatingSystem get() {
+    public final Provider<OperatingSystem> getOperatingSystem() {
+        Provider<String> osNameProvider = getProviderFactory().systemProperty("os.name");
 
-        String osName = System.getProperty("os.name").toLowerCase(Locale.ROOT);
+        return osNameProvider.map(osName -> {
+            String lowerCaseOsName = osName.toLowerCase(Locale.ROOT);
 
-        if (osName.startsWith("mac")) {
-            return OperatingSystem.MACOS;
-        }
+            if (lowerCaseOsName.startsWith("mac")) {
+                return OperatingSystem.MACOS;
+            }
 
-        if (osName.startsWith("windows")) {
-            return OperatingSystem.WINDOWS;
-        }
+            if (lowerCaseOsName.startsWith("windows")) {
+                return OperatingSystem.WINDOWS;
+            }
 
-        if (osName.startsWith("linux")) {
-            return linuxLibcFromLdd();
-        }
+            if (lowerCaseOsName.startsWith("linux")) {
+                return linuxLibcFromLdd();
+            }
 
-        throw new UnsupportedOperationException("Cannot get platform for operating system " + osName);
+            throw new UnsupportedOperationException("Cannot get platform for operating system " + osName);
+        });
     }
 
     private OperatingSystem linuxLibcFromLdd() {
