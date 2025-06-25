@@ -21,7 +21,7 @@ import javax.inject.Inject;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.process.ExecOutput;
 
-public abstract class GradleGradleOperatingSystem {
+public abstract class GradleOperatingSystem {
     @Inject
     @SuppressWarnings("JavaxInjectOnAbstractMethod")
     protected abstract ProviderFactory getProviderFactory();

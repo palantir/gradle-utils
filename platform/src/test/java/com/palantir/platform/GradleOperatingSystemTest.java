@@ -18,9 +18,8 @@ package com.palantir.platform;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import javax.inject.Inject;
 import org.gradle.api.Project;
-import org.gradle.api.provider.ProviderFactory;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.testfixtures.ProjectBuilder;
 import org.junit.jupiter.api.Test;
 
@@ -29,15 +28,9 @@ public class GradleOperatingSystemTest {
     @Test
     public void canInstantiateAndCallGet() {
         Project project = ProjectBuilder.builder().build();
-        ProviderFactory providerFactory = project.getProviders();
+        ObjectFactory objectFactory = project.getObjects();
 
-        GradleGradleOperatingSystem gradleOperatingSystem = new GradleGradleOperatingSystem() {
-            @Override
-            @Inject
-            protected ProviderFactory getProviderFactory() {
-                return providerFactory;
-            }
-        };
+        GradleOperatingSystem gradleOperatingSystem = objectFactory.newInstance(GradleOperatingSystem.class);
 
         OperatingSystem result = gradleOperatingSystem.get();
 
