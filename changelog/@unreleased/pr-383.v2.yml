@@ -1,6 +1,6 @@
 type: fix
 fix:
-  description: Operation System using `ProviderFactory.exec` for commands to ensure
+  description: | Get Operating System information using `ProviderFactory.exec` for commands to ensure
     configuration cache compatibility
   links:
   - https://github.com/palantir/gradle-utils/pull/383
