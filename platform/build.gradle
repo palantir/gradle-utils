@@ -10,7 +10,7 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
-// Note: GradleOperatingSystemTest requires '--add-opens java.base/java.lang=ALL-UNNAMED' as a JVM argument
+// Note: GradleOperatingSystemTest requires 'java.base/java.lang' opens as a JVM argument
 // because Gradle test fixtures (ObjectFactory) use reflective access to java.lang internals
 // when creating synthetic test classes.
 moduleJvmArgs {
