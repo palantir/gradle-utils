@@ -21,6 +21,7 @@ import javax.inject.Inject;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.process.ExecOutput;
+import org.gradle.process.ExecResult;
 
 public abstract class GradleOperatingSystem {
     @Inject
@@ -30,15 +31,15 @@ public abstract class GradleOperatingSystem {
     public final Provider<OperatingSystem> getOperatingSystem() {
         Provider<String> osNameProvider = getProviderFactory().systemProperty("os.name");
 
-        return osNameProvider.map(osName -> {
+        return osNameProvider.flatMap(osName -> {
             String lowerCaseOsName = osName.toLowerCase(Locale.ROOT);
 
             if (lowerCaseOsName.startsWith("mac")) {
-                return OperatingSystem.MACOS;
+                return getProviderFactory().provider(() -> OperatingSystem.MACOS);
             }
 
             if (lowerCaseOsName.startsWith("windows")) {
-                return OperatingSystem.WINDOWS;
+                return getProviderFactory().provider(() -> OperatingSystem.WINDOWS);
             }
 
             if (lowerCaseOsName.startsWith("linux")) {
@@ -49,31 +50,35 @@ public abstract class GradleOperatingSystem {
         });
     }
 
-    private OperatingSystem linuxLibcFromLdd() {
-        ExecOutput result = getProviderFactory().exec(spec -> {
+    private Provider<OperatingSystem> linuxLibcFromLdd() {
+        ExecOutput execOutput = getProviderFactory().exec(spec -> {
             spec.commandLine("ldd", "--version");
             spec.setIgnoreExitValue(true);
         });
 
-        String stdout = result.getStandardOutput().getAsText().get().trim();
-        String stderr = result.getStandardError().getAsText().get().trim();
-        String lowercaseOutput = (stdout + "\n" + stderr).toLowerCase(Locale.ROOT);
+        Provider<String> stdout = execOutput.getStandardOutput().getAsText();
+        Provider<String> stderr = execOutput.getStandardError().getAsText();
+        Provider<ExecResult> result = execOutput.getResult();
 
-        if (lowercaseOutput.contains("glibc") || lowercaseOutput.contains("gnu libc")) {
-            return OperatingSystem.LINUX_GLIBC;
-        }
+        record OutErr(String out, String err) {}
+        Provider<OutErr> outAndErr = stdout.zip(stderr, OutErr::new);
 
-        if (lowercaseOutput.contains("musl")) {
-            return OperatingSystem.LINUX_MUSL;
-        }
+        return outAndErr.zip(result, (outErr, res) -> {
+            String lowercaseOutput = (outErr.out().trim() + "\n" + outErr.err().trim()).toLowerCase(Locale.ROOT);
 
-        int exitValue = result.getResult().get().getExitValue();
-        if (exitValue == 0 || exitValue == 1) {
-            throw new UnsupportedOperationException(
-                    "Cannot work out libc used by this OS. ldd output was: " + lowercaseOutput);
-        }
-
-        throw new RuntimeException(
-                String.format("Failed to run ldd - exited with exit code %d. Output: %s.", exitValue, lowercaseOutput));
+            if (lowercaseOutput.contains("glibc") || lowercaseOutput.contains("gnu libc")) {
+                return OperatingSystem.LINUX_GLIBC;
+            }
+            if (lowercaseOutput.contains("musl")) {
+                return OperatingSystem.LINUX_MUSL;
+            }
+            int exitValue = res.getExitValue();
+            if (exitValue == 0 || exitValue == 1) {
+                throw new UnsupportedOperationException(
+                        "Cannot work out libc used by this OS. ldd output was: " + lowercaseOutput);
+            }
+            throw new RuntimeException(String.format(
+                    "Failed to run ldd - exited with exit code %d. Output: %s.", exitValue, lowercaseOutput));
+        });
     }
 }
