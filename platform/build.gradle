@@ -2,5 +2,17 @@ apply plugin: 'java-library'
 apply plugin: 'com.palantir.external-publish-jar'
 
 dependencies {
+    implementation gradleApi()
+
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
+
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+// Note: GradleOperatingSystemTest requires 'java.base/java.lang' opens as a JVM argument
+// because Gradle test fixtures (ObjectFactory) use reflective access to java.lang internals
+// when creating synthetic test classes.
+moduleJvmArgs {
+    opens 'java.base/java.lang'
 }

@@ -1,0 +1,6 @@
+type: fix
+fix:
+  description: '| Get Operating System information using `ProviderFactory.exec` for
+    commands to ensure'
+  links:
+  - https://github.com/palantir/gradle-utils/pull/383
