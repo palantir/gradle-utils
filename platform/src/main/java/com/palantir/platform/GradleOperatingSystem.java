@@ -28,26 +28,28 @@ public abstract class GradleOperatingSystem {
     @SuppressWarnings("JavaxInjectOnAbstractMethod")
     protected abstract ProviderFactory getProviderFactory();
 
+    private final Provider<OperatingSystem> linuxOperatingSystem = linuxLibcFromLdd();
+
     public final Provider<OperatingSystem> getOperatingSystem() {
         Provider<String> osNameProvider = getProviderFactory().systemProperty("os.name");
 
-        return osNameProvider.flatMap(osName -> {
+        Provider<OperatingSystem> nonLinuxOsProvider = osNameProvider.map(osName -> {
             String lowerCaseOsName = osName.toLowerCase(Locale.ROOT);
 
             if (lowerCaseOsName.startsWith("mac")) {
-                return getProviderFactory().provider(() -> OperatingSystem.MACOS);
+                return OperatingSystem.MACOS;
             }
 
             if (lowerCaseOsName.startsWith("windows")) {
-                return getProviderFactory().provider(() -> OperatingSystem.WINDOWS);
+                return OperatingSystem.WINDOWS;
             }
 
-            if (lowerCaseOsName.startsWith("linux")) {
-                return linuxLibcFromLdd();
-            }
-
-            throw new UnsupportedOperationException("Cannot get platform for operating system " + osName);
+            return null;
         });
+
+        return nonLinuxOsProvider.orElse(linuxOperatingSystem).orElse(osNameProvider.map(osName -> {
+            throw new UnsupportedOperationException("Cannot get platform for operating system " + osName);
+        }));
     }
 
     private Provider<OperatingSystem> linuxLibcFromLdd() {
