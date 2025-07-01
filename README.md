@@ -60,8 +60,6 @@ implementation 'com.palantir.gradle.utils:platform:<version>'
 
 ### Example Usage
 
-#### `@Nested` annotation
-
 You can use this within any sort of [managed object](https://docs.gradle.org/current/userguide/custom_gradle_types.html#managed_properties) by using the `@Nested` annotation.
 
 ```java
@@ -73,19 +71,7 @@ public abstract class MyTaskOrExtension {
 
 As Gradle manages the lifecycle of this object, it will instantiate `GradleOperatingSystem` for you and provide an implementation of the method that returns the aforementioned object
 
-#### `ObjectFactory` instantiation
-
-Depending on context, you can also explicitly invoke Gradle's `ObjectFactory`:
-
-```java
-public final class MyPlugin implements Plugin<Project> {
-    @Override
-    public void apply(Project project) {
-        // you can create as many instances as  you like as it's not tied to any lifecycle
-        GradleOperatingSystem operatingSystem = project.getObjects().newInstance(GradleOperatingSystem.class);
-    }
-}
-```
+Depending on context, you can also explicitly invoke Gradle's `ObjectFactory`, however this is discouraged as you want to reduce the number of instances to prevent repeated calls. 
 
 ## `gutil`
 
