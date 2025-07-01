@@ -42,6 +42,51 @@ To retrieve the value of a (test) environment variable, use the ```EnvironmentVa
 String value = environmentVariables.envVarOrFromTestingProperty("FOO").get(); 
 ```
 
+## `GradleOperatingSystem`
+
+A utility class for determining the operating system in a configuration cache friendly way. Can check for the following operating systems:
+- `LINUX_MUSL`
+- `LINUX_GLIBC`
+- `MACOS`
+- `WINDOWS`
+
+A `UnsupportedOperationException` will be thrown if the operating system is not one of the above.
+
+### Dependency
+
+```
+implementation 'com.palantir.gradle.utils:platform:<version>'
+```
+
+### Example Usage
+
+#### `@Nested` annotation
+
+You can use this within any sort of [managed object](https://docs.gradle.org/current/userguide/custom_gradle_types.html#managed_properties) by using the `@Nested` annotation.
+
+```java
+public abstract class MyTaskOrExtension {
+    @Nested
+    protected abstract GradleOperatingSystem getOs();
+}
+```
+
+As Gradle manages the lifecycle of this object, it will instantiate `GradleOperatingSystem` for you and provide an implementation of the method that returns the aforementioned object
+
+#### `ObjectFactory` instantiation
+
+Depending on context, you can also explicitly invoke Gradle's `ObjectFactory`:
+
+```java
+public final class MyPlugin implements Plugin<Project> {
+    @Override
+    public void apply(Project project) {
+        // you can create as many instances as  you like as it's not tied to any lifecycle
+        GradleOperatingSystem operatingSystem = project.getObjects().newInstance(GradleOperatingSystem.class);
+    }
+}
+```
+
 ## `gutil`
 
 The `GUtil` class in the `org.gradle.util` package has been deprecated and will be banned at some point. There are some very useful methods in here, notably around camel casing for use as task names. This library provides a selection of these methods. Please add more as needed, but try to avoid adding methods that are not used by any of the plugins.
