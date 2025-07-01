@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: update readme to include `GradleOperatingSystem`
+  links:
+  - https://github.com/palantir/gradle-utils/pull/389
