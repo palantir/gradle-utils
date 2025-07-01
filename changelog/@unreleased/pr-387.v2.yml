@@ -1,0 +1,6 @@
+type: fix
+fix:
+  description: fix provider issues in https://github.com/palantir/gradle-utils/pull/383
+    so that exec command is not called every time
+  links:
+  - https://github.com/palantir/gradle-utils/pull/387
