@@ -16,7 +16,9 @@ dependencies {
 moduleJvmArgs {
     opens 'java.base/java.lang'
 }
-
+/**
+ * Needs to be kept at Java 11 to keep compatibility with <a href="https://github.com/palantir/gradle-jdks/blob/develop/gradle-jdks-setup/build.gradle#L29">gradle-jdks-setup</a>
+ */
 javaVersion {
     sourceCompatibility = 11
 }
