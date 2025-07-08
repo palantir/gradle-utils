@@ -1,0 +1,7 @@
+type: fix
+fix:
+  description: Mark `GradleOperatingSystem::getOperatingSystem()` as `@Internal` so
+    Gradle stops complaining about an unmarked property when `GradleOperatingSystem`
+    is `@Nested` in a task
+  links:
+  - https://github.com/palantir/gradle-utils/pull/397
