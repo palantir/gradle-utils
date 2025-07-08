@@ -1,0 +1,5 @@
+type: fix
+fix:
+  description: Use `java` 11 for `platform` to allow compatibility with `gradle-jdks-setup`
+  links:
+  - https://github.com/palantir/gradle-utils/pull/398
