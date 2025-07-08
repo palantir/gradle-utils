@@ -33,7 +33,7 @@ public abstract class GradleOperatingSystem {
 
     /**
      * Because this is prefixed with get-, Gradle thinks this is a property.
-     * If GradleOperatingSystem is injected with @Nested into a Gradle task, Gradle will nag you to mark
+     * If GradleOperatingSystem is @Nested into a Gradle task, Gradle will nag you to mark
      * the property GradleOperatingSystem.operatingSystem as @Input, @Output, or @Internal
      * Hence, we mark it as @Internal
      */
