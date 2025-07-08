@@ -60,6 +60,24 @@ public abstract class GradleOperatingSystem {
         }));
     }
 
+    private static final class OutErr {
+        private final String out;
+        private final String err;
+
+        OutErr(String out, String err) {
+            this.out = out;
+            this.err = err;
+        }
+
+        public String out() {
+            return out;
+        }
+
+        public String err() {
+            return err;
+        }
+    }
+
     private Provider<OperatingSystem> linuxLibcFromLdd() {
         ExecOutput execOutput = getProviderFactory().exec(spec -> {
             spec.commandLine("ldd", "--version");
@@ -70,7 +88,6 @@ public abstract class GradleOperatingSystem {
         Provider<String> stderr = execOutput.getStandardError().getAsText();
         Provider<ExecResult> result = execOutput.getResult();
 
-        record OutErr(String out, String err) {}
         Provider<OutErr> outAndErr = stdout.zip(stderr, OutErr::new);
 
         return outAndErr.zip(result, (outErr, res) -> {

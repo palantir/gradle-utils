@@ -16,3 +16,7 @@ dependencies {
 moduleJvmArgs {
     opens 'java.base/java.lang'
 }
+
+javaVersion {
+    sourceCompatibility = 11
+}
