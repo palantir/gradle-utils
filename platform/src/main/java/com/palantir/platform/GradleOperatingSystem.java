@@ -20,6 +20,7 @@ import java.util.Locale;
 import javax.inject.Inject;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
+import org.gradle.api.tasks.Internal;
 import org.gradle.process.ExecOutput;
 import org.gradle.process.ExecResult;
 
@@ -30,6 +31,13 @@ public abstract class GradleOperatingSystem {
 
     private final Provider<OperatingSystem> linuxOperatingSystem = linuxLibcFromLdd();
 
+    /**
+     * Because this is prefixed with get-, Gradle thinks this is a property.
+     * If GradleOperatingSystem is injected with @Nested into a Gradle task, Gradle will nag you to mark
+     * the property GradleOperatingSystem.operatingSystem as @Input, @Output, or @Internal
+     * Hence, we mark it as @Internal
+     */
+    @Internal
     public final Provider<OperatingSystem> getOperatingSystem() {
         Provider<String> osNameProvider = getProviderFactory().systemProperty("os.name");
 
