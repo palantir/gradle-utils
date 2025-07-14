@@ -48,7 +48,6 @@ public enum OperatingSystem {
         return UiNames.uiName(this);
     }
 
-    @SuppressWarnings("for-rollout:StatementSwitchToExpressionSwitch")
     public Optional<String> glibcOrMuslDistribution() {
         switch (this) {
             case LINUX_MUSL:
