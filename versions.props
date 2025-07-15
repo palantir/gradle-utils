@@ -1,3 +1,4 @@
+com.fasterxml.jackson.*:* = 2.19.1
 org.apache.commons:commons-lang3 = 3.18.0
 
 org.junit.jupiter:* = 5.13.3
@@ -10,5 +11,4 @@ com.google.code.findbugs:jsr305 = 3.0.2
 com.google.errorprone:error_prone_annotations = 2.11.0
 org.checkerframework:checker-qual = 3.49.5
 com.gradle:develocity-gradle-plugin-adapters = 1.2.1
-com.fasterxml.jackson.core:* = 2.19.1
 org.junit.platform:* = 1.13.3
