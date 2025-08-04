@@ -73,6 +73,46 @@ As Gradle manages the lifecycle of this object, it will instantiate `GradleOpera
 
 Depending on context, you can also explicitly invoke Gradle's `ObjectFactory`, however this is discouraged as you want to reduce the number of instances to prevent repeated calls. 
 
+
+## `GradleExec`
+
+A utility class for executing shell commands in a configuration cache-friendly way. Eliminates the need to manually zip providers from `ProviderFactory.exec()` by providing a clean API that combines stdout, stderr, and exit results into a single provider.
+
+### Dependency
+
+```
+implementation 'com.palantir.gradle.utils:exec:<version>'
+```
+
+### Example Usage
+
+You can use this within any sort of [managed object](https://docs.gradle.org/current/userguide/custom_gradle_types.html#managed_properties) by using the `@Nested` annotation.
+
+```java
+public abstract class MyTaskOrExtension {
+    @Nested
+    protected abstract GradleExec getGradleExec();
+    
+    public void runCommand() {
+        // Lazy execution - returns Provider<ExecResultWithOutput>
+        Provider<String> result = getGradleExec()
+            .lazyExec(spec -> spec.commandLine("echo", "hello"))
+            .map(execResult -> execResult.stdOut().trim());
+            
+        // Immediate execution
+        GradleExec.ExecResultWithOutput output = getGradleExec()
+            .exec(spec -> spec.commandLine("ls", "-la"));
+            
+        // Write output directly to files
+        getGradleExec().execWithFileOutput(
+            spec -> spec.commandLine("make", "build"),
+            stdoutFile,
+            stderrFile
+        );
+    }
+}
+```
+
 ## `gutil`
 
 The `GUtil` class in the `org.gradle.util` package has been deprecated and will be banned at some point. There are some very useful methods in here, notably around camel casing for use as task names. This library provides a selection of these methods. Please add more as needed, but try to avoid adding methods that are not used by any of the plugins.
