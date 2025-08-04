@@ -5,6 +5,7 @@ dependencies {
     implementation gradleApi()
 
     implementation 'com.fasterxml.jackson.core:jackson-annotations'
+    implementation project(':exec')
 
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.junit.jupiter:junit-jupiter'

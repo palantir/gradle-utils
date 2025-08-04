@@ -4,7 +4,7 @@ buildscript {
         gradlePluginPortal()
     }
     dependencies {
-        classpath 'com.palantir.gradle.jdks:gradle-jdks-settings:0.69.0'
+        classpath 'com.palantir.gradle.jdks:gradle-jdks-settings:0.67.0'
     }
 }
 apply plugin: 'com.palantir.jdks.settings'
@@ -17,4 +17,4 @@ include 'lazily-configured-mapping'
 include 'circleci-artifacts'
 include 'develocity-adapter-utils'
 include 'platform'
-
+include 'exec'
