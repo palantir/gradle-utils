@@ -67,7 +67,6 @@ public abstract class GradleOperatingSystem {
         return getGradleExec()
                 .exec(spec -> {
                     spec.commandLine("ldd", "--version");
-                    spec.setIgnoreExitValue(true);
                 })
                 .map(execResult -> {
                     String lowercaseOutput = (execResult.stdOut().trim() + "\n"

@@ -36,8 +36,26 @@ public abstract class GradleExec {
     @SuppressWarnings("JavaxInjectOnAbstractMethod")
     protected abstract Zipper getZip();
 
-    public final Provider<ExecResultWithOutput> exec(Action<? super ExecSpec> action) {
-        ExecOutput execOutput = getProviderFactory().exec(action);
+    /**
+     * Executes a process using the provided {@link Action} to configure the {@link ExecSpec}.
+     * <p>
+     * This method always sets {@code ignoreExitValue} to {@code true} on the {@code ExecSpec},
+     * ensuring that the build does not fail regardless of the process exit code. Callers do need
+     * to handle exit codes manually.
+     * <p>
+     * The result includes the process's standard output, standard error, and the {@link ExecResult}.
+     *
+     * @param action an action to configure the {@link ExecSpec} for the process to be executed
+     * @return a Provider of {@link ExecResultWithOutput} containing the standard output, standard error,
+     *         and execution result
+     */
+    public Provider<ExecResultWithOutput> exec(Action<? super ExecSpec> action) {
+        Action<ExecSpec> wrappedAction = spec -> {
+            action.execute(spec);
+            spec.setIgnoreExitValue(true);
+        };
+
+        ExecOutput execOutput = getProviderFactory().exec(wrappedAction);
 
         Provider<String> stdoutProvider = execOutput.getStandardOutput().getAsText();
         Provider<String> stderrProvider = execOutput.getStandardError().getAsText();
