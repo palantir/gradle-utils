@@ -15,6 +15,7 @@
  */
 package com.palantir.gradle.utils.exec;
 
+import com.palantir.gradle.utils.providers.Zipper;
 import javax.inject.Inject;
 import org.gradle.api.Action;
 import org.gradle.api.provider.Provider;

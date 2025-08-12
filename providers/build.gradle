@@ -19,19 +19,11 @@ apply plugin: 'com.palantir.external-publish-jar'
 
 dependencies {
     implementation gradleApi()
-    implementation project(':providers')
-
-    annotationProcessor 'org.immutables:value'
-
-    compileOnly 'org.immutables:value::annotations'
 
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
 
-// Note: GradleExec requires 'java.base/java.lang' opens as a JVM argument
-// because Gradle test fixtures (ObjectFactory) use reflective access to java.lang internals
-// when creating synthetic test classes.
 moduleJvmArgs {
     opens 'java.base/java.lang'
 }
