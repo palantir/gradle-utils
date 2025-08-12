@@ -113,6 +113,46 @@ public abstract class MyTaskOrExtension {
 }
 ```
 
+## `Zipper`
+
+A utility class for combining ("zipping") multiple Gradle `Provider` instances into a single provider whose value is computed from the values of the input providers.
+
+### Dependency
+
+```
+implementation 'com.palantir.gradle.utils:providers:<version>'
+```
+
+### Example Usage
+
+You can use this within any [managed object](https://docs.gradle.org/current/userguide/custom_gradle_types.html#managed_properties) by using the `@Nested` annotation:
+
+```java
+public abstract class MyTaskOrExtension {
+    @Nested
+    protected abstract Zipper getZipper();
+
+    public Provider<String> combinedValue() {
+        Provider<String> foo = ...;
+        Provider<Integer> bar = ...;
+        Provider<Double> baz = ...;
+        // Combine three providers into one
+        return getZipper().zip(foo, bar, baz, (f, b, z) -> f + "-" + b + "-" + z);
+    }
+}
+```
+
+You can also combine an arbitrary list of providers:
+
+```java
+Provider<String> result = getZipper().zip(
+    List.of(provider1, provider2, provider3),
+    values -> values.get(0) + ":" + values.get(1) + ":" + values.get(2)
+);
+```
+
+The `Zipper` utility is ideal for cases where you want to combine the results of multiple providers, without verbose mapping or manual chaining.
+
 ## `gutil`
 
 The `GUtil` class in the `org.gradle.util` package has been deprecated and will be banned at some point. There are some very useful methods in here, notably around camel casing for use as task names. This library provides a selection of these methods. Please add more as needed, but try to avoid adding methods that are not used by any of the plugins.
