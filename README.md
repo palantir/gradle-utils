@@ -125,7 +125,7 @@ implementation 'com.palantir.gradle.utils:providers:<version>'
 
 ### Example Usage
 
-You can use this within any [managed object](https://docs.gradle.org/current/userguide/custom_gradle_types.html#managed_properties) by using the `@Nested` annotation:
+You can use this within any [managed object](https://github.com/palantir/gradle-guide/blob/develop/guide/managed-types-and-properties.md) by using the `@Nested` annotation:
 
 ```java
 public abstract class MyTaskOrExtension {
