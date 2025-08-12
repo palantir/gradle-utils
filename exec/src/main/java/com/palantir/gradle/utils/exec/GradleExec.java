@@ -15,8 +15,8 @@
  */
 package com.palantir.gradle.utils.exec;
 
-import com.palantir.gradle.utils.zip.GenerateZip;
-import com.palantir.gradle.utils.zip.ProviderZipGenerated;
+import com.palantir.gradle.utils.zip.Zipper;
+import com.palantir.gradle.utils.zip.Zips;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -37,10 +37,10 @@ public abstract class GradleExec {
     protected abstract ProviderFactory getProviderFactory();
 
     @Nested
+    @Zips(arities = {3, 30})
     @SuppressWarnings("JavaxInjectOnAbstractMethod")
-    protected abstract ProviderZipGenerated getZip();
+    protected abstract Zipper getZip();
 
-    @GenerateZip(arity = 3)
     public final Provider<ExecResultWithOutput> lazyExec(Action<? super ExecSpec> action) {
         ExecOutput execOutput = getProviderFactory().exec(action);
 
@@ -48,7 +48,6 @@ public abstract class GradleExec {
         Provider<String> stderrProvider = execOutput.getStandardError().getAsText();
         Provider<ExecResult> resultProvider = execOutput.getResult();
 
-        // This will use the generated zip3 method
         return getZip().zip(
                         resultProvider,
                         stdoutProvider,

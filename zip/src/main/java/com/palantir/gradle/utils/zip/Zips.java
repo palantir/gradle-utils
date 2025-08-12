@@ -21,7 +21,11 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.SOURCE)
-@Target({ElementType.METHOD, ElementType.TYPE})
-public @interface GenerateZip {
-    int arity();
+@Target({ElementType.METHOD})
+public @interface Zips {
+    /**
+     * The arities for which to generate zip methods.
+     * For example, {2, 3, 4} will generate zip methods that can combine 2, 3, or 4 Providers.
+     */
+    int[] arities();
 }

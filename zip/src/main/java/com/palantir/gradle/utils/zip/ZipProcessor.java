@@ -29,10 +29,9 @@ import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
-import org.gradle.api.UncheckedIOException;
 
 @AutoService(Processor.class)
-@SupportedAnnotationTypes("com.palantir.gradle.utils.zip.GenerateZip")
+@SupportedAnnotationTypes("com.palantir.gradle.utils.zip.Zips")
 @SupportedSourceVersion(SourceVersion.RELEASE_11)
 public final class ZipProcessor extends AbstractProcessor {
 
@@ -42,13 +41,15 @@ public final class ZipProcessor extends AbstractProcessor {
             return false;
         }
 
-        Set<Integer> arities = roundEnv.getElementsAnnotatedWith(GenerateZip.class).stream()
-                .map(e -> e.getAnnotation(GenerateZip.class).arity())
+        Set<Integer> arities = roundEnv.getElementsAnnotatedWith(Zips.class).stream()
+                .map(element -> element.getAnnotation(Zips.class))
+                .flatMapToInt(annotation -> IntStream.of(annotation.arities()))
+                .boxed()
                 .collect(Collectors.toSet());
 
         if (!arities.isEmpty()) {
             try {
-                generateZipMethods("com.palantir.gradle.utils.zip", "ProviderZipGenerated", arities);
+                generateZipMethods("com.palantir.gradle.utils.zip", "Zipper", arities);
             } catch (IOException e) {
                 processingEnv
                         .getMessager()
@@ -65,93 +66,124 @@ public final class ZipProcessor extends AbstractProcessor {
         try (Writer writer = sourceFile.openWriter()) {
             writeHeader(writer, packageName, className);
 
-            arities.forEach(arity -> {
-                try {
-                    generateZipMethod(writer, arity);
-                    generateFunctionalInterface(writer, arity);
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
+            String methods =
+                    arities.stream().sorted().map(this::generateMethodsForArity).collect(Collectors.joining("\n"));
 
+            writer.write(methods);
             writer.write("}\n");
         }
     }
 
     private void writeHeader(Writer writer, String packageName, String className) throws IOException {
-        writer.write(String.format("package %s;\n\n", packageName));
-        writer.write("import org.gradle.api.provider.Provider;\n");
-        writer.write("import org.gradle.api.provider.ListProperty;\n");
-        writer.write("import org.gradle.api.model.ObjectFactory;\n");
-        writer.write("import java.util.List;\n");
-        writer.write("import java.util.function.Function;\n");
-        writer.write("import javax.inject.Inject;\n\n");
-        writer.write("/** Generated zip methods by ZipProcessor */\n");
-        writer.write(String.format("public abstract class %s {\n\n", className));
-        writer.write("    @Inject\n");
-        writer.write("    protected abstract ObjectFactory getObjectFactory();\n\n");
-        writer.write(
-                "    protected final <R> Provider<R> zipInternal(Function<List<Object>, R> combiner, Provider<?>... providers) {\n");
-        writer.write("        ListProperty<Object> listProperty = getObjectFactory().listProperty(Object.class);\n");
-        writer.write("        for (Provider<?> provider : providers) {\n");
-        writer.write("            listProperty.add(provider);\n");
-        writer.write("        }\n");
-        writer.write("        return listProperty.map(combiner::apply);\n");
-        writer.write("    }\n\n");
+        String header = String.join(
+                "\n",
+                String.format("package %s;", packageName),
+                "",
+                "import org.gradle.api.provider.Provider;",
+                "import org.gradle.api.provider.ListProperty;",
+                "import org.gradle.api.model.ObjectFactory;",
+                "import java.util.List;",
+                "import java.util.function.Function;",
+                "import javax.inject.Inject;",
+                "",
+                "/** Generated zip methods by ZipProcessor */",
+                String.format("public abstract class %s {", className),
+                "",
+                "    @Inject",
+                "    protected abstract ObjectFactory getObjectFactory();",
+                "",
+                "    protected final <R> Provider<R> zipInternal(Function<List<Object>, R> combiner, Provider<?>... providers) {",
+                "        ListProperty<Object> listProperty = getObjectFactory().listProperty(Object.class);",
+                "        for (Provider<?> provider : providers) {",
+                "            listProperty.add(provider);",
+                "        }",
+                "        return listProperty.map(combiner::apply);",
+                "    }",
+                "");
+
+        writer.write(header);
+        writer.write("\n");
     }
 
-    private void generateZipMethod(Writer writer, int arity) throws IOException {
-        String typeParams = IntStream.range(0, arity)
+    private String generateMethodsForArity(int arity) {
+        return generateZipMethod(arity) + "\n" + generateFunctionalInterface(arity);
+    }
+
+    private String generateZipMethod(int arity) {
+        String typeParams = generateTypeParams(arity);
+        String methodParams = generateMethodParams(arity);
+        String providerArgs = generateProviderArgs(arity);
+        String extractors = generateExtractors(arity);
+        String combinerArgs = generateCombinerArgs(arity);
+
+        return String.join(
+                "\n",
+                String.format("    public final <%s, R> Provider<R> zip(", typeParams),
+                String.format("            %s,", methodParams),
+                String.format("            Function%d<%s, R> combiner) {", arity, typeParams),
+                "        return zipInternal(",
+                "                list -> {",
+                extractors,
+                String.format("                    return combiner.apply(%s);", combinerArgs),
+                "                },",
+                String.format("                %s);", providerArgs),
+                "    }",
+                "");
+    }
+
+    private String generateFunctionalInterface(int arity) {
+        String typeParams = generateTypeParams(arity);
+        String applyParams = generateApplyParams(arity);
+
+        return String.join(
+                "\n",
+                "    @FunctionalInterface",
+                String.format("    public interface Function%d<%s, R> {", arity, typeParams),
+                String.format("        R apply(%s);", applyParams),
+                "    }",
+                "");
+    }
+
+    private String generateTypeParams(int arity) {
+        return IntStream.range(0, arity)
                 .mapToObj(i -> String.valueOf((char) ('A' + i)))
                 .collect(Collectors.joining(", "));
+    }
 
-        String params = IntStream.range(0, arity)
+    private String generateMethodParams(int arity) {
+        return IntStream.range(0, arity)
                 .mapToObj(i -> {
                     char type = (char) ('A' + i);
                     return String.format("Provider<%c> provider%c", type, type);
                 })
                 .collect(Collectors.joining(", "));
+    }
 
-        String args = IntStream.range(0, arity)
+    private String generateProviderArgs(int arity) {
+        return IntStream.range(0, arity)
                 .mapToObj(i -> "provider" + (char) ('A' + i))
                 .collect(Collectors.joining(", "));
+    }
 
-        String extractors = IntStream.range(0, arity)
+    private String generateExtractors(int arity) {
+        return IntStream.range(0, arity)
                 .mapToObj(i -> {
                     char type = (char) ('A' + i);
                     return String.format("                    %c arg%d = (%c) list.get(%d);", type, i, type, i);
                 })
                 .collect(Collectors.joining("\n"));
-
-        String combinerArgs = IntStream.range(0, arity).mapToObj(i -> "arg" + i).collect(Collectors.joining(", "));
-
-        writer.write(String.format("    public final <%s, R> Provider<R> zip(\n", typeParams));
-        writer.write(String.format("            %s,\n", params));
-        writer.write(String.format("            Function%d<%s, R> combiner) {\n", arity, typeParams));
-        writer.write("        return zipInternal(\n");
-        writer.write("                list -> {\n");
-        writer.write(extractors + "\n");
-        writer.write(String.format("                    return combiner.apply(%s);\n", combinerArgs));
-        writer.write("                },\n");
-        writer.write(String.format("                %s);\n", args));
-        writer.write("    }\n\n");
     }
 
-    private void generateFunctionalInterface(Writer writer, int arity) throws IOException {
-        String typeParams = IntStream.range(0, arity)
-                .mapToObj(i -> String.valueOf((char) ('A' + i)))
-                .collect(Collectors.joining(", "));
+    private String generateCombinerArgs(int arity) {
+        return IntStream.range(0, arity).mapToObj(i -> "arg" + i).collect(Collectors.joining(", "));
+    }
 
-        String params = IntStream.range(0, arity)
+    private String generateApplyParams(int arity) {
+        return IntStream.range(0, arity)
                 .mapToObj(i -> {
                     char type = (char) ('A' + i);
                     return String.format("%c arg%d", type, i);
                 })
                 .collect(Collectors.joining(", "));
-
-        writer.write("    @FunctionalInterface\n");
-        writer.write(String.format("    public interface Function%d<%s, R> {\n", arity, typeParams));
-        writer.write(String.format("        R apply(%s);\n", params));
-        writer.write("    }\n\n");
     }
 }
