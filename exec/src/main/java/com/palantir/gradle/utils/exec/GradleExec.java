@@ -37,7 +37,7 @@ public abstract class GradleExec {
     protected abstract ProviderFactory getProviderFactory();
 
     @Nested
-    @Zips(arities = {3, 30})
+    @Zips(3)
     @SuppressWarnings("JavaxInjectOnAbstractMethod")
     protected abstract Zipper getZip();
 

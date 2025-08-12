@@ -16,6 +16,7 @@
 package com.palantir.gradle.utils.zip;
 
 import com.google.auto.service.AutoService;
+import com.palantir.logsafe.exceptions.SafeRuntimeException;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Set;
@@ -25,15 +26,14 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
-import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.SourceVersion;
 import javax.lang.model.element.TypeElement;
 import javax.tools.JavaFileObject;
 
 @AutoService(Processor.class)
 @SupportedAnnotationTypes("com.palantir.gradle.utils.zip.Zips")
-@SupportedSourceVersion(SourceVersion.RELEASE_11)
 public final class ZipProcessor extends AbstractProcessor {
+
+    private static final int MAX_ARITY = 253;
 
     @Override
     public boolean process(Set<? extends TypeElement> _annotations, RoundEnvironment roundEnv) {
@@ -43,8 +43,17 @@ public final class ZipProcessor extends AbstractProcessor {
 
         Set<Integer> arities = roundEnv.getElementsAnnotatedWith(Zips.class).stream()
                 .map(element -> element.getAnnotation(Zips.class))
-                .flatMapToInt(annotation -> IntStream.of(annotation.arities()))
+                .flatMapToInt(annotation -> IntStream.of(annotation.value()))
                 .boxed()
+                .filter(arity -> {
+                    if (arity > MAX_ARITY) {
+                        throw new SafeRuntimeException("Cannot zip more than " + MAX_ARITY + " providers");
+                    }
+                    if (arity <= 0) {
+                        throw new SafeRuntimeException("Cannot zip a negative arity");
+                    }
+                    return true;
+                })
                 .collect(Collectors.toSet());
 
         if (!arities.isEmpty()) {
@@ -57,7 +66,7 @@ public final class ZipProcessor extends AbstractProcessor {
                                 javax.tools.Diagnostic.Kind.ERROR, "Failed to generate zip methods: " + e.getMessage());
             }
         }
-        return true;
+        return false;
     }
 
     private void generateZipMethods(String packageName, String className, Set<Integer> arities) throws IOException {
@@ -92,7 +101,7 @@ public final class ZipProcessor extends AbstractProcessor {
                 "    @Inject",
                 "    protected abstract ObjectFactory getObjectFactory();",
                 "",
-                "    protected final <R> Provider<R> zipInternal(Function<List<Object>, R> combiner, Provider<?>... providers) {",
+                "    protected final <Res> Provider<Res> zipInternal(Function<List<Object>, Res> combiner, Provider<?>... providers) {",
                 "        ListProperty<Object> listProperty = getObjectFactory().listProperty(Object.class);",
                 "        for (Provider<?> provider : providers) {",
                 "            listProperty.add(provider);",
@@ -118,9 +127,9 @@ public final class ZipProcessor extends AbstractProcessor {
 
         return String.join(
                 "\n",
-                String.format("    public final <%s, R> Provider<R> zip(", typeParams),
+                String.format("    public final <%s, Res> Provider<Res> zip(", typeParams),
                 String.format("            %s,", methodParams),
-                String.format("            Function%d<%s, R> combiner) {", arity, typeParams),
+                String.format("            Function%d<%s, Res> combiner) {", arity, typeParams),
                 "        return zipInternal(",
                 "                list -> {",
                 extractors,
@@ -138,51 +147,58 @@ public final class ZipProcessor extends AbstractProcessor {
         return String.join(
                 "\n",
                 "    @FunctionalInterface",
-                String.format("    public interface Function%d<%s, R> {", arity, typeParams),
-                String.format("        R apply(%s);", applyParams),
+                String.format("    public interface Function%d<%s, Res> {", arity, typeParams),
+                String.format("        Res apply(%s);", applyParams),
                 "    }",
                 "");
     }
 
+    /**
+     * Generates a type parameter name using T-prefix convention: T1, T2, T3, etc.
+     * This is much cleaner and scales infinitely without alphabet limitations.
+     */
+    private String getTypeParamName(int index) {
+        return "T" + (index + 1);
+    }
+
     private String generateTypeParams(int arity) {
-        return IntStream.range(0, arity)
-                .mapToObj(i -> String.valueOf((char) ('A' + i)))
-                .collect(Collectors.joining(", "));
+        return IntStream.range(0, arity).mapToObj(this::getTypeParamName).collect(Collectors.joining(", "));
     }
 
     private String generateMethodParams(int arity) {
         return IntStream.range(0, arity)
                 .mapToObj(i -> {
-                    char type = (char) ('A' + i);
-                    return String.format("Provider<%c> provider%c", type, type);
+                    String typeName = getTypeParamName(i);
+                    // Use lowercase 'provider' prefix with index for cleaner parameter names
+                    return String.format("Provider<%s> provider%d", typeName, i + 1);
                 })
                 .collect(Collectors.joining(", "));
     }
 
     private String generateProviderArgs(int arity) {
-        return IntStream.range(0, arity)
-                .mapToObj(i -> "provider" + (char) ('A' + i))
-                .collect(Collectors.joining(", "));
+        return IntStream.range(0, arity).mapToObj(i -> "provider" + (i + 1)).collect(Collectors.joining(", "));
     }
 
     private String generateExtractors(int arity) {
         return IntStream.range(0, arity)
                 .mapToObj(i -> {
-                    char type = (char) ('A' + i);
-                    return String.format("                    %c arg%d = (%c) list.get(%d);", type, i, type, i);
+                    String typeName = getTypeParamName(i);
+                    // Use 1-based indexing for arg names to match type params
+                    return String.format(
+                            "                    %s arg%d = (%s) list.get(%d);", typeName, i + 1, typeName, i);
                 })
                 .collect(Collectors.joining("\n"));
     }
 
     private String generateCombinerArgs(int arity) {
-        return IntStream.range(0, arity).mapToObj(i -> "arg" + i).collect(Collectors.joining(", "));
+        return IntStream.range(0, arity).mapToObj(i -> "arg" + (i + 1)).collect(Collectors.joining(", "));
     }
 
     private String generateApplyParams(int arity) {
         return IntStream.range(0, arity)
                 .mapToObj(i -> {
-                    char type = (char) ('A' + i);
-                    return String.format("%c arg%d", type, i);
+                    String typeName = getTypeParamName(i);
+                    return String.format("%s arg%d", typeName, i + 1);
                 })
                 .collect(Collectors.joining(", "));
     }

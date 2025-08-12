@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 public @interface Zips {
     /**
      * The arities for which to generate zip methods.
-     * For example, {2, 3, 4} will generate zip methods that can combine 2, 3, or 4 Providers.
+     * For example, value = {2, 3, 4} will generate zip methods that can combine 2, 3, or 4 Providers.
      */
-    int[] arities();
+    int[] value();
 }

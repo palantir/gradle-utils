@@ -19,6 +19,7 @@ apply plugin: 'com.palantir.external-publish-jar'
 
 dependencies {
     implementation gradleApi()
+    implementation 'com.palantir.safe-logging:preconditions'
 
     // Auto-service for processor registration
     implementation 'com.google.auto.service:auto-service'
