@@ -65,7 +65,7 @@ public abstract class GradleOperatingSystem {
 
     private Provider<OperatingSystem> linuxLibcFromLdd() {
         return getGradleExec()
-                .lazyExec(spec -> {
+                .exec(spec -> {
                     spec.commandLine("ldd", "--version");
                     spec.setIgnoreExitValue(true);
                 })
