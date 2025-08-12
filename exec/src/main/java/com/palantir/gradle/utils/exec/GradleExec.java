@@ -15,6 +15,8 @@
  */
 package com.palantir.gradle.utils.exec;
 
+import com.palantir.gradle.utils.zip.GenerateZip;
+import com.palantir.gradle.utils.zip.ProviderZipGenerated;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,6 +24,7 @@ import javax.inject.Inject;
 import org.gradle.api.Action;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
+import org.gradle.api.tasks.Nested;
 import org.gradle.process.ExecOutput;
 import org.gradle.process.ExecResult;
 import org.gradle.process.ExecSpec;
@@ -33,6 +36,11 @@ public abstract class GradleExec {
     @SuppressWarnings("JavaxInjectOnAbstractMethod")
     protected abstract ProviderFactory getProviderFactory();
 
+    @Nested
+    @SuppressWarnings("JavaxInjectOnAbstractMethod")
+    protected abstract ProviderZipGenerated getZip();
+
+    @GenerateZip(arity = 3)
     public final Provider<ExecResultWithOutput> lazyExec(Action<? super ExecSpec> action) {
         ExecOutput execOutput = getProviderFactory().exec(action);
 
@@ -40,12 +48,12 @@ public abstract class GradleExec {
         Provider<String> stderrProvider = execOutput.getStandardError().getAsText();
         Provider<ExecResult> resultProvider = execOutput.getResult();
 
-        return stdoutProvider
-                .zip(
+        // This will use the generated zip3 method
+        return getZip().zip(
+                        resultProvider,
+                        stdoutProvider,
                         stderrProvider,
-                        (stdout, stderr) ->
-                                resultProvider.map(result -> ExecResultWithOutput.of(stdout, stderr, result)))
-                .flatMap(provider -> provider);
+                        (result, stdout, stderr) -> ExecResultWithOutput.of(stdout, stderr, result));
     }
 
     public final ExecResultWithOutput exec(Action<? super ExecSpec> action) {

@@ -1,7 +1,17 @@
 # Run ./gradlew writeVersionsLocks to regenerate this file
 com.fasterxml.jackson.core:jackson-annotations:2.19.2 (1 constraints: 40054c3b)
+com.google.auto:auto-common:1.2.1 (1 constraints: 9d0f6d86)
+com.google.auto.service:auto-service:1.1.1 (1 constraints: 0505f435)
+com.google.auto.service:auto-service-annotations:1.1.1 (1 constraints: 9c0f6a86)
+com.google.code.findbugs:jsr305:3.0.2 (2 constraints: 1d0fb186)
+com.google.errorprone:error_prone_annotations:2.18.0 (2 constraints: 820f28a1)
+com.google.guava:failureaccess:1.0.1 (1 constraints: 140ae1b4)
+com.google.guava:guava:32.0.1-jre (2 constraints: f11eb7bd)
+com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
+com.google.j2objc:j2objc-annotations:2.8 (1 constraints: be09f5a0)
 com.gradle:develocity-gradle-plugin-adapters:1.2.1 (1 constraints: 0605f735)
 org.apache.commons:commons-lang3:3.18.0 (1 constraints: 3e054d3b)
+org.checkerframework:checker-qual:3.49.5 (2 constraints: 910f76a3)
 org.immutables:value:2.11.1 (1 constraints: 3705333b)
 
 [Test dependencies]
