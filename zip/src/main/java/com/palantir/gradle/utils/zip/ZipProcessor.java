@@ -101,7 +101,8 @@ public final class ZipProcessor extends AbstractProcessor {
                 "    @Inject",
                 "    protected abstract ObjectFactory getObjectFactory();",
                 "",
-                "    protected final <Res> Provider<Res> zipInternal(Function<List<Object>, Res> combiner, Provider<?>... providers) {",
+                "    protected final <Res> Provider<Res> zipInternal(Function<List<Object>, Res> combiner,"
+                        + " Provider<?>... providers) {",
                 "        ListProperty<Object> listProperty = getObjectFactory().listProperty(Object.class);",
                 "        for (Provider<?> provider : providers) {",
                 "            listProperty.add(provider);",
