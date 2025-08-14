@@ -61,7 +61,7 @@ public abstract class GradleExec {
         Provider<String> stderrProvider = execOutput.getStandardError().getAsText();
         Provider<ExecResult> resultProvider = execOutput.getResult();
 
-        return getZip().zip(
+        return getZip().zip3(
                         resultProvider,
                         stdoutProvider,
                         stderrProvider,

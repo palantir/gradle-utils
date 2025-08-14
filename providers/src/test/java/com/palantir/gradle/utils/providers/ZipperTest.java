@@ -120,7 +120,7 @@ class ZipperTest {
             Provider<String> p3 = ProjectBuilder.builder().build().provider(() -> "C");
 
             // When
-            Provider<String> combined = zipper.zip(p1, p2, p3, (a, b, c) -> a + b + c);
+            Provider<String> combined = zipper.zip3(p1, p2, p3, (a, b, c) -> a + b + c);
 
             // Then
             assertThat(combined).isNotNull();
@@ -139,7 +139,7 @@ class ZipperTest {
             Provider<String> p3 = ProjectBuilder.builder().build().provider(() -> "C");
 
             // When
-            Provider<String> combined = zipper.zip(p1, p2, p3, (a, b, c) -> a + b + c);
+            Provider<String> combined = zipper.zip3(p1, p2, p3, (a, b, c) -> a + b + c);
 
             // Then
             assertThat(called[0]).isFalse();
@@ -161,7 +161,7 @@ class ZipperTest {
             Provider<String> p4 = ProjectBuilder.builder().build().provider(() -> "D");
 
             // When
-            Provider<String> combined = zipper.zip(p1, p2, p3, p4, (a, b, c, d) -> a + b + c + d);
+            Provider<String> combined = zipper.zip4(p1, p2, p3, p4, (a, b, c, d) -> a + b + c + d);
 
             // Then
             assertThat(combined.get()).isEqualTo("ABCD");
@@ -180,7 +180,7 @@ class ZipperTest {
             Provider<String> p4 = ProjectBuilder.builder().build().provider(() -> "D");
 
             // When
-            Provider<String> combined = zipper.zip(p1, p2, p3, p4, (a, b, c, d) -> a + b + c + d);
+            Provider<String> combined = zipper.zip4(p1, p2, p3, p4, (a, b, c, d) -> a + b + c + d);
 
             // Then
             assertThat(called[0]).isFalse();

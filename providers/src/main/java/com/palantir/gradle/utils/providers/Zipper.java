@@ -62,7 +62,7 @@ public abstract class Zipper {
      * @return a provider that computes its value from the three input providers
      */
     @SuppressWarnings("unchecked")
-    public final <T1, T2, T3, R> Provider<R> zip(
+    public final <T1, T2, T3, R> Provider<R> zip3(
             Provider<T1> provider1, Provider<T2> provider2, Provider<T3> provider3, Function3<T1, T2, T3, R> combiner) {
         return zipList(
                 List.of(provider1, provider2, provider3),
@@ -86,7 +86,7 @@ public abstract class Zipper {
      * @return a provider that computes its value from the four input providers
      */
     @SuppressWarnings("unchecked")
-    public final <T1, T2, T3, T4, R> Provider<R> zip(
+    public final <T1, T2, T3, T4, R> Provider<R> zip4(
             Provider<T1> provider1,
             Provider<T2> provider2,
             Provider<T3> provider3,
