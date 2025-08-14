@@ -35,13 +35,8 @@ public abstract class Zipper {
     /**
      * Combines a list of providers into a single provider whose value is computed by applying
      * the given combiner function to a list of the resolved provider values.
-     *
-     * @param providers the providers to combine
-     * @param combiner a function that computes the result from the list of provider values
-     * @param <R> the type of the combined provider's value
-     * @return a provider that computes its value from the input providers
      */
-    public final <R> Provider<R> zipList(List<? extends Provider<?>> providers, Function<List<Object>, R> combiner) {
+    private <R> Provider<R> zipList(List<? extends Provider<?>> providers, Function<List<Object>, R> combiner) {
         ListProperty<Object> listProperty = getObjectFactory().listProperty(Object.class);
         providers.forEach(listProperty::add);
         return listProperty.map(combiner::apply);
@@ -50,16 +45,6 @@ public abstract class Zipper {
     /**
      * Combines three providers into a single provider whose value is computed by applying
      * the given combiner function to the resolved values of the input providers.
-     *
-     * @param provider1 the first provider
-     * @param provider2 the second provider
-     * @param provider3 the third provider
-     * @param combiner a function that computes the result from the three provider values
-     * @param <T1> the type of the first provider's value
-     * @param <T2> the type of the second provider's value
-     * @param <T3> the type of the third provider's value
-     * @param <R> the type of the combined provider's value
-     * @return a provider that computes its value from the three input providers
      */
     @SuppressWarnings("unchecked")
     public final <T1, T2, T3, R> Provider<R> zip3(
@@ -72,18 +57,6 @@ public abstract class Zipper {
     /**
      * Combines four providers into a single provider whose value is computed by applying
      * the given combiner function to the resolved values of the input providers.
-     *
-     * @param provider1 the first provider
-     * @param provider2 the second provider
-     * @param provider3 the third provider
-     * @param provider4 the fourth provider
-     * @param combiner a function that computes the result from the four provider values
-     * @param <T1> the type of the first provider's value
-     * @param <T2> the type of the second provider's value
-     * @param <T3> the type of the third provider's value
-     * @param <T4> the type of the fourth provider's value
-     * @param <R> the type of the combined provider's value
-     * @return a provider that computes its value from the four input providers
      */
     @SuppressWarnings("unchecked")
     public final <T1, T2, T3, T4, R> Provider<R> zip4(

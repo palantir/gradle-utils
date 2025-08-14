@@ -96,19 +96,8 @@ public abstract class MyTaskOrExtension {
     public void runCommand() {
         // Lazy execution - returns Provider<ExecResultWithOutput>
         Provider<String> result = getGradleExec()
-            .lazyExec(spec -> spec.commandLine("echo", "hello"))
+            .exec(spec -> spec.commandLine("echo", "hello"))
             .map(execResult -> execResult.stdOut().trim());
-            
-        // Immediate execution
-        GradleExec.ExecResultWithOutput output = getGradleExec()
-            .exec(spec -> spec.commandLine("ls", "-la"));
-            
-        // Write output directly to files
-        getGradleExec().execWithFileOutput(
-            spec -> spec.commandLine("make", "build"),
-            stdoutFile,
-            stderrFile
-        );
     }
 }
 ```
@@ -137,21 +126,10 @@ public abstract class MyTaskOrExtension {
         Provider<Integer> bar = ...;
         Provider<Double> baz = ...;
         // Combine three providers into one
-        return getZipper().zip(foo, bar, baz, (f, b, z) -> f + "-" + b + "-" + z);
+        return getZipper().zip3(foo, bar, baz, (f, b, z) -> f + "-" + b + "-" + z);
     }
 }
 ```
-
-You can also combine an arbitrary list of providers:
-
-```java
-Provider<String> result = getZipper().zip(
-    List.of(provider1, provider2, provider3),
-    values -> values.get(0) + ":" + values.get(1) + ":" + values.get(2)
-);
-```
-
-The `Zipper` utility is ideal for cases where you want to combine the results of multiple providers, without verbose mapping or manual chaining.
 
 ## `gutil`
 
