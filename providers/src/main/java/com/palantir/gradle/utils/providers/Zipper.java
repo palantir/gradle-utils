@@ -41,7 +41,7 @@ public abstract class Zipper {
      * @param <R> the type of the combined provider's value
      * @return a provider that computes its value from the input providers
      */
-    public final <R> Provider<R> zip(List<? extends Provider<?>> providers, Function<List<Object>, R> combiner) {
+    public final <R> Provider<R> zipList(List<? extends Provider<?>> providers, Function<List<Object>, R> combiner) {
         ListProperty<Object> listProperty = getObjectFactory().listProperty(Object.class);
         providers.forEach(listProperty::add);
         return listProperty.map(combiner::apply);
@@ -64,7 +64,7 @@ public abstract class Zipper {
     @SuppressWarnings("unchecked")
     public final <T1, T2, T3, R> Provider<R> zip(
             Provider<T1> provider1, Provider<T2> provider2, Provider<T3> provider3, Function3<T1, T2, T3, R> combiner) {
-        return zip(
+        return zipList(
                 List.of(provider1, provider2, provider3),
                 list -> combiner.apply((T1) list.get(0), (T2) list.get(1), (T3) list.get(2)));
     }
@@ -92,7 +92,7 @@ public abstract class Zipper {
             Provider<T3> provider3,
             Provider<T4> provider4,
             Function4<T1, T2, T3, T4, R> combiner) {
-        return zip(
+        return zipList(
                 List.of(provider1, provider2, provider3, provider4),
                 list -> combiner.apply((T1) list.get(0), (T2) list.get(1), (T3) list.get(2), (T4) list.get(3)));
     }
