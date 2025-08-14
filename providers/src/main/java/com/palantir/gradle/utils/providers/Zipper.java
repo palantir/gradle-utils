@@ -28,9 +28,6 @@ import org.gradle.api.provider.Provider;
  */
 public abstract class Zipper {
 
-    /**
-     * Returns the {@link ObjectFactory} used to create Gradle property types.
-     */
     @Inject
     @SuppressWarnings("JavaxInjectOnAbstractMethod")
     protected abstract ObjectFactory getObjectFactory();
@@ -100,36 +97,13 @@ public abstract class Zipper {
                 list -> combiner.apply((T1) list.get(0), (T2) list.get(1), (T3) list.get(2), (T4) list.get(3)));
     }
 
-    /**
-     * A function that accepts three arguments and produces a result.
-     */
     @FunctionalInterface
     public interface Function3<T1, T2, T3, R> {
-        /**
-         * Applies this function to the given arguments.
-         *
-         * @param arg1 the first function argument
-         * @param arg2 the second function argument
-         * @param arg3 the third function argument
-         * @return the function result
-         */
         R apply(T1 arg1, T2 arg2, T3 arg3);
     }
 
-    /**
-     * A function that accepts four arguments and produces a result.
-     */
     @FunctionalInterface
     public interface Function4<T1, T2, T3, T4, R> {
-        /**
-         * Applies this function to the given arguments.
-         *
-         * @param arg1 the first function argument
-         * @param arg2 the second function argument
-         * @param arg3 the third function argument
-         * @param arg4 the fourth function argument
-         * @return the function result
-         */
         R apply(T1 arg1, T2 arg2, T3 arg3, T4 arg4);
     }
 }
