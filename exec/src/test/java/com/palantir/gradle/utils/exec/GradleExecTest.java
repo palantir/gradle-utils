@@ -18,6 +18,7 @@ package com.palantir.gradle.utils.exec;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.palantir.gradle.utils.providers.FailableProvider;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,7 +48,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("echo", "test");
 
         // When
-        ExecResultProvider resultProvider = gradleExec.exec(action);
+        FailableProvider<ExecResultWithOutput> resultProvider = gradleExec.exec(action);
 
         // Then
         assertThat(resultProvider).isNotNull();
@@ -65,7 +66,7 @@ class GradleExecTest {
         };
 
         // When - create the provider
-        ExecResultProvider resultProvider = gradleExec.exec(action);
+        FailableProvider<ExecResultWithOutput> resultProvider = gradleExec.exec(action);
 
         // Then - side effect should not have occurred yet
         assertThat(Files.exists(sideEffectFile)).isFalse();
@@ -86,7 +87,7 @@ class GradleExecTest {
         };
 
         // When
-        ExecResultProvider resultProvider = gradleExec.exec(action);
+        FailableProvider<ExecResultWithOutput> resultProvider = gradleExec.exec(action);
         ExecResultWithOutput execResult = resultProvider.get();
 
         // Then - verify that stdout, stderr, and result are all properly captured
@@ -101,7 +102,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("date", "+%s%N"); // Unix timestamp with nanoseconds
 
         // When
-        ExecResultProvider provider = gradleExec.exec(action);
+        FailableProvider<ExecResultWithOutput> provider = gradleExec.exec(action);
         ExecResultWithOutput result1 = provider.get();
         Thread.sleep(10);
         ExecResultWithOutput result2 = provider.get();
@@ -117,7 +118,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("echo", "hello");
 
         // When
-        ExecResultProvider result = gradleExec.exec(action);
+        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action);
 
         // Then
         assertThat(result.get().stdOut().trim()).isEqualTo("hello");
@@ -130,7 +131,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "exit 42");
 
         // When
-        ExecResultProvider result = gradleExec.exec(action);
+        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action);
 
         // Then
         assertThat(result.getRaw().result().getExitValue()).isEqualTo(42);
@@ -142,7 +143,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "echo 'error' >&2; exit 1");
 
         // When
-        ExecResultProvider result = gradleExec.exec(action);
+        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action);
 
         // Then
         assertThatThrownBy(result::get)
@@ -157,7 +158,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "echo 'custom error' >&2; exit 1");
 
         // When
-        ExecResultProvider result = gradleExec.exec(action);
+        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action);
 
         // Then
         assertThatThrownBy(() -> result.getOrThrow(output ->
@@ -172,7 +173,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "echo 'not found' >&2; exit 127");
 
         // When
-        ExecResultProvider result = gradleExec.exec(action).mapFailure(output -> {
+        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action).mapFailure(output -> {
             if (output.result().getExitValue() == 127) {
                 return new IllegalStateException(
                         "Command not found: " + output.stdErr().trim());
@@ -192,7 +193,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("echo", "success");
 
         // When
-        ExecResultProvider result =
+        FailableProvider<ExecResultWithOutput> result =
                 gradleExec.exec(action).mapFailure(_output -> new IllegalStateException("This should not be thrown"));
 
         // Then
@@ -205,7 +206,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "echo 'output'; exit 1");
 
         // When
-        ExecResultProvider result = gradleExec.exec(action);
+        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action);
 
         // Then - getRaw() should not throw even for failures
         ExecResultWithOutput raw = result.getRaw();
@@ -282,7 +283,7 @@ class GradleExecTest {
         };
 
         // When
-        ExecResultProvider result = gradleExec.exec(action);
+        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action);
 
         // Then
         ExecResultWithOutput raw = result.getRaw();
@@ -297,7 +298,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "exit 2");
 
         // When
-        ExecResultProvider result = gradleExec
+        FailableProvider<ExecResultWithOutput> result = gradleExec
                 .exec(action)
                 .mapFailure(_output -> new RuntimeException("First mapping"))
                 .mapFailure(_output -> new IllegalStateException("Second mapping"));
@@ -350,8 +351,8 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "exit 1");
 
         // When - even with a filter that would reject, failures pass through
-        ExecResultProvider filtered =
-                (ExecResultProvider) gradleExec.exec(action).filter(_result -> false); // This would reject everything
+        FailableProvider<ExecResultWithOutput> filtered = (FailableProvider<ExecResultWithOutput>)
+                gradleExec.exec(action).filter(_result -> false); // This would reject everything
 
         // Then - failure still propagates
         assertThatThrownBy(filtered::get).isInstanceOf(ExecFailedException.class);

@@ -15,6 +15,7 @@
  */
 package com.palantir.gradle.utils.exec;
 
+import com.palantir.gradle.utils.providers.FailableProvider;
 import com.palantir.gradle.utils.providers.Zipper;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
@@ -49,7 +50,7 @@ public abstract class GradleExec {
      * @param action an action to configure the {@link ExecSpec} for the process to be executed
      * @return a Provider of {@link Result} containing the execution result with flexible error handling
      */
-    public ExecResultProvider exec(Action<? super ExecSpec> action) {
+    public FailableProvider<ExecResultWithOutput> exec(Action<? super ExecSpec> action) {
         // Capture the executable for error messages
         AtomicReference<String> executableHolder = new AtomicReference<>();
 
@@ -72,6 +73,6 @@ public abstract class GradleExec {
                         stderrProvider,
                         (result, stdout, stderr) -> ExecResultWithOutput.of(stdout, stderr, result));
 
-        return new DefaultExecResultProvider(combinedProvider, executableHolder.get());
+        return ExecResultProviders.forExecResult(combinedProvider, executableHolder.get());
     }
 }
