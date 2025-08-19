@@ -16,6 +16,7 @@
 
 package com.palantir.platform;
 
+import com.palantir.gradle.utils.exec.ExecResultWithOutput;
 import com.palantir.gradle.utils.exec.GradleExec;
 import java.util.Locale;
 import javax.inject.Inject;
@@ -68,7 +69,11 @@ public abstract class GradleOperatingSystem {
                 .exec(spec -> {
                     spec.commandLine("ldd", "--version");
                 })
-                .map(execResult -> {
+                .map(result -> {
+                    // We need custom handling for both success and failure cases
+                    // because ldd can exit with 0 or 1 and still be successful
+                    ExecResultWithOutput execResult = result.getRaw();
+
                     String lowercaseOutput = (execResult.stdOut().trim() + "\n"
                                     + execResult.stdErr().trim())
                             .toLowerCase(Locale.ROOT);

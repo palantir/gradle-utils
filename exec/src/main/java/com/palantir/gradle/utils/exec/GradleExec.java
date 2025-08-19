@@ -16,6 +16,7 @@
 package com.palantir.gradle.utils.exec;
 
 import com.palantir.gradle.utils.providers.Zipper;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
 import org.gradle.api.Action;
 import org.gradle.api.provider.Provider;
@@ -24,7 +25,6 @@ import org.gradle.api.tasks.Nested;
 import org.gradle.process.ExecOutput;
 import org.gradle.process.ExecResult;
 import org.gradle.process.ExecSpec;
-import org.immutables.value.Value;
 
 public abstract class GradleExec {
 
@@ -39,19 +39,24 @@ public abstract class GradleExec {
     /**
      * Executes a process using the provided {@link Action} to configure the {@link ExecSpec}.
      * <p>
-     * This method always sets {@code ignoreExitValue} to {@code true} on the {@code ExecSpec},
-     * ensuring that the build does not fail regardless of the process exit code. Callers do need
-     * to handle exit codes manually.
+     * Returns a {@link Provider} of {@link ExecResultWithOutput} wrapped in a {@link Result} type that allows
+     * for flexible error handling. The Result can be unwrapped with {@code .get()} for default error
+     * handling, or processed with custom error handling using {@code .mapFailure()}.
      * <p>
-     * The result includes the process's standard output, standard error, and the {@link ExecResult}.
+     * This method always captures stdout/stderr regardless of exit code, allowing callers to
+     * provide context-specific error messages based on the actual output.
      *
      * @param action an action to configure the {@link ExecSpec} for the process to be executed
-     * @return a Provider of {@link ExecResultWithOutput} containing the standard output, standard error,
-     *         and execution result
+     * @return a Provider of {@link Result} containing the execution result with flexible error handling
      */
-    public Provider<ExecResultWithOutput> exec(Action<? super ExecSpec> action) {
+    public Provider<Result<ExecResultWithOutput>> exec(Action<? super ExecSpec> action) {
+        // Capture the executable for error messages
+        AtomicReference<String> executableHolder = new AtomicReference<>();
+
         Action<ExecSpec> wrappedAction = spec -> {
             action.execute(spec);
+            executableHolder.set(spec.getExecutable());
+            // Always ignore exit value to capture output
             spec.setIgnoreExitValue(true);
         };
 
@@ -61,27 +66,13 @@ public abstract class GradleExec {
         Provider<String> stderrProvider = execOutput.getStandardError().getAsText();
         Provider<ExecResult> resultProvider = execOutput.getResult();
 
-        return getZip().zip3(
-                        resultProvider,
-                        stdoutProvider,
-                        stderrProvider,
-                        (result, stdout, stderr) -> ExecResultWithOutput.of(stdout, stderr, result));
-    }
-
-    @Value.Immutable
-    public interface ExecResultWithOutput {
-        String stdOut();
-
-        String stdErr();
-
-        ExecResult result();
-
-        static ExecResultWithOutput of(String stdOut, String stdErr, ExecResult result) {
-            return ImmutableExecResultWithOutput.builder()
-                    .stdOut(stdOut)
-                    .stdErr(stdErr)
-                    .result(result)
-                    .build();
-        }
+        return getZip().zip3(resultProvider, stdoutProvider, stderrProvider, (result, stdout, stderr) -> {
+            ExecResultWithOutput output = ExecResultWithOutput.of(stdout, stderr, result);
+            if (result.getExitValue() == 0) {
+                return Result.success(output);
+            } else {
+                return Result.failure(output, executableHolder.get());
+            }
+        });
     }
 }
