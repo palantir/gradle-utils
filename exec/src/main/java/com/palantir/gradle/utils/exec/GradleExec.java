@@ -49,7 +49,7 @@ public abstract class GradleExec {
      * @param action an action to configure the {@link ExecSpec} for the process to be executed
      * @return a Provider of {@link Result} containing the execution result with flexible error handling
      */
-    public Provider<Result<ExecResultWithOutput>> exec(Action<? super ExecSpec> action) {
+    public ExecResultProvider exec(Action<? super ExecSpec> action) {
         // Capture the executable for error messages
         AtomicReference<String> executableHolder = new AtomicReference<>();
 
@@ -66,13 +66,12 @@ public abstract class GradleExec {
         Provider<String> stderrProvider = execOutput.getStandardError().getAsText();
         Provider<ExecResult> resultProvider = execOutput.getResult();
 
-        return getZip().zip3(resultProvider, stdoutProvider, stderrProvider, (result, stdout, stderr) -> {
-            ExecResultWithOutput output = ExecResultWithOutput.of(stdout, stderr, result);
-            if (result.getExitValue() == 0) {
-                return Result.success(output);
-            } else {
-                return Result.failure(output, executableHolder.get());
-            }
-        });
+        Provider<ExecResultWithOutput> combinedProvider = getZip().zip3(
+                        resultProvider,
+                        stdoutProvider,
+                        stderrProvider,
+                        (result, stdout, stderr) -> ExecResultWithOutput.of(stdout, stderr, result));
+
+        return new DefaultExecResultProvider(combinedProvider, executableHolder.get());
     }
 }
