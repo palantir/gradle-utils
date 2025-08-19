@@ -249,7 +249,7 @@ class GradleExecTest {
                 .trim());
 
         // Then
-        assertThatThrownBy(() -> outputProvider.get())
+        assertThatThrownBy(outputProvider::get)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Git is not installed");
     }
@@ -312,7 +312,7 @@ class GradleExecTest {
                 .mapFailure(_output -> new IllegalStateException("Second mapping"));
 
         // Then - the last mapFailure should win
-        assertThatThrownBy(() -> result.get())
+        assertThatThrownBy(result::get)
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("Second mapping");
     }
