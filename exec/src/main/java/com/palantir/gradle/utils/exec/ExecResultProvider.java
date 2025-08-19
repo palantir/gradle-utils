@@ -38,29 +38,15 @@ public interface ExecResultProvider extends Provider<ExecResultWithOutput> {
     ExecResultProvider mapFailure(Function<ExecResultWithOutput, ? extends RuntimeException> exceptionMapper);
 
     /**
-     * Returns true if the execution succeeded (exit code 0).
-     */
-    boolean isSuccess();
-
-    /**
      * Returns the raw result without throwing, useful for custom handling.
      * This is similar to getOrNull() but always returns a value.
      */
     ExecResultWithOutput getRaw();
 
     /**
-     * Maps the successful result to another type.
-     * If the execution failed, the failure is propagated.
-     */
-    <S> Provider<S> mapSuccess(Function<ExecResultWithOutput, S> mapper);
-
-    /**
      * Handles both success and failure cases, returning a regular Provider.
      * This is useful for converting back to standard Gradle providers.
      * Never throws an exception.
      */
-    <S> Provider<S> fold(
-            Function<ExecResultWithOutput, S> onSuccess,
-            Function<ExecResultWithOutput, S> onFailure
-    );
+    <S> Provider<S> fold(Function<ExecResultWithOutput, S> onSuccess, Function<ExecResultWithOutput, S> onFailure);
 }

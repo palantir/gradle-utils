@@ -97,22 +97,8 @@ class DefaultExecResultProvider implements ExecResultProvider {
     }
 
     @Override
-    public boolean isSuccess() {
-        ExecResultWithOutput result = delegate.get();
-        return result.result().getExitValue() == 0;
-    }
-
-    @Override
     public ExecResultWithOutput getRaw() {
         return delegate.get();
-    }
-
-    @Override
-    public <S> Provider<S> mapSuccess(Function<ExecResultWithOutput, S> mapper) {
-        return map(result -> {
-            throwIfFailed(result);
-            return mapper.apply(result);
-        });
     }
 
     @Override
@@ -173,9 +159,6 @@ class DefaultExecResultProvider implements ExecResultProvider {
 
     @Override
     public Provider<ExecResultWithOutput> filter(Spec<? super ExecResultWithOutput> spec) {
-        // For filter, we have a choice:
-        // Option 1: Failures always pass through (shown here)
-        // Option 2: Failures are filtered out (would return empty provider)
         Provider<ExecResultWithOutput> filtered = delegate.filter(result -> {
             // Failures always pass the filter (so they can be thrown later)
             if (result.result().getExitValue() != 0) {

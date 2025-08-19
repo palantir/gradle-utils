@@ -93,7 +93,6 @@ class GradleExecTest {
         assertThat(execResult.stdOut().trim()).isEqualTo("stdout");
         assertThat(execResult.stdErr().trim()).isEqualTo("stderr");
         assertThat(execResult.result().getExitValue()).isEqualTo(0);
-        assertThat(resultProvider.isSuccess()).isTrue();
     }
 
     @Test
@@ -121,7 +120,6 @@ class GradleExecTest {
         ExecResultProvider result = gradleExec.exec(action);
 
         // Then
-        assertThat(result.isSuccess()).isTrue();
         assertThat(result.get().stdOut().trim()).isEqualTo("hello");
         assertThat(result.get().result().getExitValue()).isEqualTo(0);
     }
@@ -135,7 +133,6 @@ class GradleExecTest {
         ExecResultProvider result = gradleExec.exec(action);
 
         // Then
-        assertThat(result.isSuccess()).isFalse();
         assertThat(result.getRaw().result().getExitValue()).isEqualTo(42);
     }
 
@@ -199,7 +196,6 @@ class GradleExecTest {
                 gradleExec.exec(action).mapFailure(_output -> new IllegalStateException("This should not be thrown"));
 
         // Then
-        assertThat(result.isSuccess()).isTrue();
         assertThat(result.get().stdOut().trim()).isEqualTo("success");
     }
 
@@ -313,27 +309,13 @@ class GradleExecTest {
     }
 
     @Test
-    void should_use_mapSuccess_to_transform_successful_results() {
-        // Given
-        Action<ExecSpec> action = spec -> spec.commandLine("echo", "hello world");
-
-        // When
-        Provider<Integer> wordCount = gradleExec
-                .exec(action)
-                .mapSuccess(output -> output.stdOut().trim().split(" ").length);
-
-        // Then
-        assertThat(wordCount.get()).isEqualTo(2);
-    }
-
-    @Test
-    void should_propagate_failure_through_mapSuccess() {
+    void should_propagate_failure_through_map() {
         // Given
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "exit 1");
 
         // When
         Provider<String> result =
-                gradleExec.exec(action).mapSuccess(output -> output.stdOut().trim());
+                gradleExec.exec(action).map(output -> output.stdOut().trim());
 
         // Then
         assertThatThrownBy(result::get)
