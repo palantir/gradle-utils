@@ -40,7 +40,7 @@ public abstract class GradleExec {
     /**
      * Executes a process using the provided {@link Action} to configure the {@link ExecSpec}.
      * <p>
-     * Returns a {@link Provider} of {@link ExecResultWithOutput} wrapped in a {@link Result} type that allows
+     * Returns a {@link Provider} of {@link ExecResultWithOutput} wrapped in a {@link FailableProvider} type that allows
      * for flexible error handling. The Result can be unwrapped with {@code .get()} for default error
      * handling, or processed with custom error handling using {@code .mapFailure()}.
      * <p>
@@ -48,7 +48,7 @@ public abstract class GradleExec {
      * provide context-specific error messages based on the actual output.
      *
      * @param action an action to configure the {@link ExecSpec} for the process to be executed
-     * @return a Provider of {@link Result} containing the execution result with flexible error handling
+     * @return a Provider of {@link FailableProvider} containing the execution result with flexible error handling
      */
     public FailableProvider<ExecResultWithOutput> exec(Action<? super ExecSpec> action) {
         // Capture the executable for error messages

@@ -35,20 +35,13 @@ public class ExecFailedException extends RuntimeException {
         String stdOut = execResult.stdOut().trim();
 
         if (!stdErr.isEmpty()) {
-            message.append("\n\nStandard Error:\n").append(truncateOutput(stdErr, 1000));
+            message.append("\n\nStandard Error:\n").append(stdErr);
         }
 
         if (!stdOut.isEmpty()) {
-            message.append("\n\nStandard Output:\n").append(truncateOutput(stdOut, 1000));
+            message.append("\n\nStandard Output:\n").append(stdOut);
         }
 
         return message.toString();
-    }
-
-    private static String truncateOutput(String output, int maxLength) {
-        if (output.length() <= maxLength) {
-            return output;
-        }
-        return output.substring(0, maxLength) + "\n... (truncated)";
     }
 }
