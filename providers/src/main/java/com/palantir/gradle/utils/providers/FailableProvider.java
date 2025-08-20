@@ -45,6 +45,4 @@ public interface FailableProvider<T> extends Provider<T> {
      * Never throws.
      */
     <S> Provider<S> fold(Function<T, S> onSuccess, Function<T, S> onFailure);
-
-    // Provider<T> already has: get(), getOrNull(), getOrElse(), isPresent(), map, flatMap, filter, zip, etc.
 }

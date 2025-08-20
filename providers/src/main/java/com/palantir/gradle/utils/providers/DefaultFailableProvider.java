@@ -161,15 +161,16 @@ public final class DefaultFailableProvider<T> implements FailableProvider<T> {
         return new DefaultFailableProvider<>(filtered, isFailure, exceptionMapper);
     }
 
-    @Override
     public <U, R> Provider<R> zip(Provider<U> right, BiFunction<? super T, ? super U, ? extends R> combiner) {
-        // Use the delegate directly for zip, but wrap the combiner to check for failures
-        Provider<R> result = delegate.zip(
-                right instanceof DefaultFailableProvider ? ((DefaultFailableProvider<U>) right).delegate : right,
-                (leftValue, rightValue) -> {
-                    throwIfFailed(leftValue);
-                    return combiner.apply(leftValue, rightValue);
-                });
-        return result;
+        boolean rightIsFailable = right instanceof DefaultFailableProvider;
+        Provider<U> rightDelegate = rightIsFailable ? ((DefaultFailableProvider<U>) right).delegate : right;
+
+        return delegate.zip(rightDelegate, (leftValue, rightValue) -> {
+            throwIfFailed(leftValue);
+            if (rightIsFailable) {
+                ((DefaultFailableProvider<U>) right).throwIfFailed(rightValue);
+            }
+            return combiner.apply(leftValue, rightValue);
+        });
     }
 }

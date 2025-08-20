@@ -15,6 +15,7 @@
  */
 package com.palantir.gradle.utils.exec;
 
+import com.palantir.gradle.utils.providers.DefaultFailableProvider;
 import com.palantir.gradle.utils.providers.FailableProvider;
 import com.palantir.gradle.utils.providers.Zipper;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,17 +39,13 @@ public abstract class GradleExec {
     protected abstract Zipper getZip();
 
     /**
-     * Executes a process using the provided {@link Action} to configure the {@link ExecSpec}.
+     * Executes a process and returns a {@link FailableProvider} that captures stdout, stderr, and exit code.
      * <p>
-     * Returns a {@link Provider} of {@link ExecResultWithOutput} wrapped in a {@link FailableProvider} type that allows
-     * for flexible error handling. The Result can be unwrapped with {@code .get()} for default error
-     * handling, or processed with custom error handling using {@code .mapFailure()}.
-     * <p>
-     * This method always captures stdout/stderr regardless of exit code, allowing callers to
-     * provide context-specific error messages based on the actual output.
+     * The returned provider throws {@link ExecFailedException} on non-zero exit codes when {@code .get()}
+     * is called, but allows custom error handling via {@code .mapFailure()} or {@code .fold()}.
      *
-     * @param action an action to configure the {@link ExecSpec} for the process to be executed
-     * @return a Provider of {@link FailableProvider} containing the execution result with flexible error handling
+     * @param action configures the {@link ExecSpec} for the process to execute
+     * @return a FailableProvider containing the execution result with captured output
      */
     public FailableProvider<ExecResultWithOutput> exec(Action<? super ExecSpec> action) {
         // Capture the executable for error messages
@@ -73,6 +70,9 @@ public abstract class GradleExec {
                         stderrProvider,
                         (result, stdout, stderr) -> ExecResultWithOutput.of(stdout, stderr, result));
 
-        return ExecResultProviders.forExecResult(combinedProvider, executableHolder.get());
+        return new DefaultFailableProvider<>(
+                combinedProvider,
+                result -> result.result().getExitValue() != 0,
+                result -> new ExecFailedException(executableHolder.get(), result));
     }
 }
