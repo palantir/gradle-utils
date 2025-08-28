@@ -5,6 +5,7 @@ apply plugin: 'groovy'
 dependencies {
     implementation project(':environment-variables')
     implementation gradleApi()
+    api project(':providers')
 
     annotationProcessor 'org.immutables:value'
 

@@ -16,6 +16,9 @@
 package com.palantir.gradle.utils.circleciartifacts;
 
 import com.palantir.gradle.utils.environmentvariables.EnvironmentVariables;
+import com.palantir.gradle.utils.providers.Zipper;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import javax.inject.Inject;
@@ -29,6 +32,9 @@ public abstract class CircleCiArtifacts {
 
     @Nested
     protected abstract EnvironmentVariables getVariables();
+
+    @Nested
+    protected abstract Zipper getZipper();
 
     @Inject
     protected abstract ProjectLayout getProjectLayout();
@@ -47,13 +53,40 @@ public abstract class CircleCiArtifacts {
         Provider<String> circleArtifacts = physicalArtifactPath
                 .map(file -> file.getAsFile().getAbsolutePath())
                 .map(artifacts -> artifacts.replace("/home/circleci/", "/~/"));
+        Provider<String> circleUrl = getVariables()
+                .envVarOrFromTestingProperty("CIRCLE_BUILD_URL")
+                .map(CircleCiArtifacts::extractDomain)
+                .orElse("https://<circle_url>");
+        Provider<String> workflowJobId = getVariables().envVarOrFromTestingProperty("CIRCLE_WORKFLOW_JOB_ID");
 
-        Provider<String> externalLocation = circleProjectUsername
-                .zip(circleProjectReponame, (username, reponame) -> username + "/" + reponame)
-                .zip(circleBuildNum, (fullPath, buildNum) -> fullPath + "/" + buildNum + "/artifacts/")
-                .zip(circleNodeIndex, (fullPath, nodeIndex) -> fullPath + nodeIndex)
+        Provider<String> externalLocation = getZipper()
+                .zip4(
+                        circleProjectUsername,
+                        circleProjectReponame,
+                        circleBuildNum,
+                        circleNodeIndex,
+                        (username, reponame, buildNum, nodeIndex) ->
+                                username + "/" + reponame + "/" + buildNum + "/artifacts/" + nodeIndex)
                 .zip(circleArtifacts, (fullPath, artifactPath) -> fullPath + artifactPath);
 
-        return physicalArtifactPath.zip(externalLocation, ArtifactLocation::of);
+        Provider<String> circleLink = getZipper()
+                .zip4(
+                        circleUrl,
+                        workflowJobId,
+                        circleNodeIndex,
+                        circleArtifacts,
+                        (url, jobId, nodeIndex, artifactPath) ->
+                                url + "/output/job/" + jobId + "/artifacts/" + nodeIndex + artifactPath);
+
+        return getZipper().zip3(physicalArtifactPath, externalLocation, circleLink, ArtifactLocation::of);
+    }
+
+    private static String extractDomain(String url) {
+        try {
+            URL urlObj = new URL(url);
+            return urlObj.getProtocol() + "://" + urlObj.getHost();
+        } catch (MalformedURLException e) {
+            return "Invalid URL";
+        }
     }
 }
