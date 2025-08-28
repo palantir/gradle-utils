@@ -17,8 +17,8 @@ package com.palantir.gradle.utils.circleciartifacts;
 
 import com.palantir.gradle.utils.environmentvariables.EnvironmentVariables;
 import com.palantir.gradle.utils.providers.Zipper;
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import javax.inject.Inject;
@@ -83,9 +83,16 @@ public abstract class CircleCiArtifacts {
 
     private static String extractDomain(String url) {
         try {
-            URL urlObj = new URL(url);
-            return urlObj.getProtocol() + "://" + urlObj.getHost();
-        } catch (MalformedURLException e) {
+            URI uri = new URI(url);
+            String scheme = uri.getScheme();
+            String host = uri.getHost();
+
+            if (scheme == null || host == null) {
+                return "Invalid URL";
+            }
+
+            return scheme + "://" + host;
+        } catch (URISyntaxException e) {
             return "Invalid URL";
         }
     }
