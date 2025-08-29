@@ -140,7 +140,7 @@ class FailableProviderTest {
     @Test
     void fold_returns_onSuccess_for_success() {
         FailableProvider<TestValue> provider = createProvider(TestValue.of("ok", false));
-        String result = provider.fold(val -> "Yay: " + val.value(), val -> "Boo: " + val.value())
+        String result = provider.handle(val -> "Yay: " + val.value(), val -> "Boo: " + val.value())
                 .get();
         assertThat(result).isEqualTo("Yay: ok");
     }
@@ -148,7 +148,7 @@ class FailableProviderTest {
     @Test
     void fold_returns_onFailure_for_failure() {
         FailableProvider<TestValue> provider = createProvider(TestValue.of("fail", true));
-        String result = provider.fold(val -> "Yay: " + val.value(), val -> "Boo: " + val.value())
+        String result = provider.handle(val -> "Yay: " + val.value(), val -> "Boo: " + val.value())
                 .get();
         assertThat(result).isEqualTo("Boo: fail");
     }

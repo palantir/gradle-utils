@@ -20,29 +20,38 @@ import java.util.function.Function;
 import org.gradle.api.provider.Provider;
 
 /**
- * A Provider that can represent both success and failure, propagating failure-aware semantics
- * through mapping, folding, etc.
+ * A Provider that can represent operations that may fail, providing
+ * type-safe error handling in Gradle's lazy configuration model.
+ *
+ * @param <T> The type of value this provider produces
  */
 public interface FailableProvider<T> extends Provider<T> {
 
     /**
-     * Gets the value, throwing a custom exception if the value is a failure.
+     * Creates a FailableProvider from a regular provider with a failure predicate.
+     */
+    static <T> FailableProvider<T> of(
+            Provider<T> delegate, Function<T, Boolean> isFailure, Function<T, ? extends RuntimeException> errorMapper) {
+        return new DefaultFailableProvider<>(delegate, isFailure::apply, errorMapper);
+    }
+
+    /**
+     * Gets the value, throwing a custom exception if failed.
      */
     T getOrThrow(Function<T, ? extends RuntimeException> exceptionMapper);
 
     /**
-     * Returns a new FailableProvider that uses the given exception mapper for failures.
+     * Returns a new FailableProvider with a different exception mapper.
      */
     FailableProvider<T> mapFailure(Function<T, ? extends RuntimeException> exceptionMapper);
 
     /**
-     * Returns the raw value (maybe a failure) without throwing.
+     * Returns the raw value without throwing on failure.
      */
     T getRaw();
 
     /**
-     * Handles both success and failure cases, returning a regular Provider.
-     * Never throws.
+     * Transforms both success and failure cases.
      */
-    <S> Provider<S> fold(Function<T, S> onSuccess, Function<T, S> onFailure);
+    <S> Provider<S> handle(Function<T, S> onSuccess, Function<T, S> onFailure);
 }

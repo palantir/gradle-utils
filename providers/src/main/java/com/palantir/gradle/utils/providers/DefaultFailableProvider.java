@@ -16,7 +16,7 @@
 
 package com.palantir.gradle.utils.providers;
 
-import java.util.Objects;
+import com.palantir.logsafe.Preconditions;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -25,16 +25,16 @@ import org.gradle.api.Transformer;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.specs.Spec;
 
-public final class DefaultFailableProvider<T> implements FailableProvider<T> {
+final class DefaultFailableProvider<T> implements FailableProvider<T> {
     private final Provider<T> delegate;
     private final Predicate<T> isFailure;
     private final Function<T, ? extends RuntimeException> exceptionMapper;
 
-    public DefaultFailableProvider(
+    DefaultFailableProvider(
             Provider<T> delegate, Predicate<T> isFailure, Function<T, ? extends RuntimeException> exceptionMapper) {
-        this.delegate = Objects.requireNonNull(delegate, "delegate");
-        this.isFailure = Objects.requireNonNull(isFailure, "isFailure");
-        this.exceptionMapper = Objects.requireNonNull(exceptionMapper, "exceptionMapper");
+        this.delegate = Preconditions.checkNotNull(delegate, "delegate");
+        this.isFailure = Preconditions.checkNotNull(isFailure, "isFailure");
+        this.exceptionMapper = Preconditions.checkNotNull(exceptionMapper, "exceptionMapper");
     }
 
     private void throwIfFailed(T value) {
@@ -89,7 +89,7 @@ public final class DefaultFailableProvider<T> implements FailableProvider<T> {
     }
 
     @Override
-    public <S> Provider<S> fold(Function<T, S> onSuccess, Function<T, S> onFailure) {
+    public <S> Provider<S> handle(Function<T, S> onSuccess, Function<T, S> onFailure) {
         return delegate.map(value -> isFailure.test(value) ? onFailure.apply(value) : onSuccess.apply(value));
     }
 
@@ -111,13 +111,7 @@ public final class DefaultFailableProvider<T> implements FailableProvider<T> {
 
     @Override
     public Provider<T> filter(Spec<? super T> spec) {
-        Provider<T> filtered = delegate.filter(value -> {
-            // Always pass through failures so they can be thrown later
-            if (isFailure.test(value)) {
-                return true;
-            }
-            return spec.isSatisfiedBy(value);
-        });
+        Provider<T> filtered = delegate.filter(value -> isFailure.test(value) || spec.isSatisfiedBy(value));
         return new DefaultFailableProvider<>(filtered, isFailure, exceptionMapper);
     }
 
@@ -136,6 +130,7 @@ public final class DefaultFailableProvider<T> implements FailableProvider<T> {
         return new DefaultFailableProvider<>(delegate.forUseAtConfigurationTime(), isFailure, exceptionMapper);
     }
 
+    @Override
     public <U, R> Provider<R> zip(Provider<U> right, BiFunction<? super T, ? super U, ? extends R> combiner) {
         if (right instanceof DefaultFailableProvider) {
             DefaultFailableProvider<U> rightFailable = (DefaultFailableProvider<U>) right;

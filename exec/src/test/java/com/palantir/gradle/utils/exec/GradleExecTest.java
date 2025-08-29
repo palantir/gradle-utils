@@ -258,14 +258,14 @@ class GradleExecTest {
         // When
         Provider<String> successProvider = gradleExec
                 .exec(successAction)
-                .fold(
+                .handle(
                         success -> "Command succeeded: " + success.stdOut().trim(),
                         failure ->
                                 "Command failed with code: " + failure.result().getExitValue());
 
         Provider<String> failureProvider = gradleExec
                 .exec(failureAction)
-                .fold(
+                .handle(
                         success -> "Command succeeded: " + success.stdOut().trim(),
                         failure ->
                                 "Command failed with code: " + failure.result().getExitValue());

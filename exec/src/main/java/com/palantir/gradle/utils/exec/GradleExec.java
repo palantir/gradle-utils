@@ -15,7 +15,6 @@
  */
 package com.palantir.gradle.utils.exec;
 
-import com.palantir.gradle.utils.providers.DefaultFailableProvider;
 import com.palantir.gradle.utils.providers.FailableProvider;
 import com.palantir.gradle.utils.providers.Zipper;
 import java.util.concurrent.atomic.AtomicReference;
@@ -25,7 +24,6 @@ import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.Nested;
 import org.gradle.process.ExecOutput;
-import org.gradle.process.ExecResult;
 import org.gradle.process.ExecSpec;
 
 public abstract class GradleExec {
@@ -39,40 +37,44 @@ public abstract class GradleExec {
     protected abstract Zipper getZip();
 
     /**
-     * Executes a process and returns a {@link FailableProvider} that captures stdout, stderr, and exit code.
+     * Executes a process and returns a FailableProvider for the result.
      * <p>
-     * The returned provider throws {@link ExecFailedException} on non-zero exit codes when {@code .get()}
-     * is called, but allows custom error handling via {@code .mapFailure()} or {@code .fold()}.
+     * Usage:
+     * <pre>
+     * def result = gradleExec.exec {
+     *     commandLine 'git', 'status'
+     * }
      *
-     * @param action configures the {@link ExecSpec} for the process to execute
-     * @return a FailableProvider containing the execution result with captured output
+     * // Handle success/failure
+     * result.handle(
+     *     { output -> println "Success: ${output.stdOut}" },
+     *     { output -> println "Failed: ${output.stdErr}" }
+     * )
+     *
+     * // Or throw on failure
+     * def output = result.get().stdOut
+     * </pre>
      */
     public FailableProvider<ExecResultWithOutput> exec(Action<? super ExecSpec> action) {
-        // Capture the executable for error messages
-        AtomicReference<String> executableHolder = new AtomicReference<>();
+        AtomicReference<String> executable = new AtomicReference<>();
 
-        Action<ExecSpec> wrappedAction = spec -> {
+        Action<ExecSpec> captureAction = spec -> {
             action.execute(spec);
-            executableHolder.set(spec.getExecutable());
-            // Always ignore exit value to capture output
+            executable.set(spec.getExecutable());
             spec.setIgnoreExitValue(true);
         };
 
-        ExecOutput execOutput = getProviderFactory().exec(wrappedAction);
+        ExecOutput execOutput = getProviderFactory().exec(captureAction);
 
-        Provider<String> stdoutProvider = execOutput.getStandardOutput().getAsText();
-        Provider<String> stderrProvider = execOutput.getStandardError().getAsText();
-        Provider<ExecResult> resultProvider = execOutput.getResult();
-
-        Provider<ExecResultWithOutput> combinedProvider = getZip().zip3(
-                        resultProvider,
-                        stdoutProvider,
-                        stderrProvider,
+        Provider<ExecResultWithOutput> resultProvider = getZip().zip3(
+                        execOutput.getResult(),
+                        execOutput.getStandardOutput().getAsText(),
+                        execOutput.getStandardError().getAsText(),
                         (result, stdout, stderr) -> ExecResultWithOutput.of(stdout, stderr, result));
 
-        return new DefaultFailableProvider<>(
-                combinedProvider,
+        return FailableProvider.of(
+                resultProvider,
                 result -> result.result().getExitValue() != 0,
-                result -> new ExecFailedException(executableHolder.get(), result));
+                result -> new ExecFailedException(executable.get(), result));
     }
 }

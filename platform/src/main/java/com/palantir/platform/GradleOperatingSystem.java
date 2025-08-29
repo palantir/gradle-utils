@@ -65,13 +65,13 @@ public abstract class GradleOperatingSystem {
     }
 
     private Provider<OperatingSystem> linuxLibcFromLdd() {
-        // Using fold to handle both success and failure cases
+        // Using handle to deal with both success and failure cases
         // ldd --version exits with 0 for glibc and 1 for musl, both are valid
         return getGradleExec()
                 .exec(spec -> {
                     spec.commandLine("ldd", "--version");
                 })
-                .fold(
+                .handle(
                         // Success case (exit code 0) - typically glibc
                         this::parseLibcFromOutput,
                         // Failure case - could be musl (exit 1) or actual failure

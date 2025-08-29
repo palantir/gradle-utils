@@ -19,6 +19,7 @@ apply plugin: 'com.palantir.external-publish-jar'
 
 dependencies {
     implementation gradleApi()
+    implementation 'com.palantir.safe-logging:preconditions'
 
     testAnnotationProcessor 'org.immutables:value'
 
