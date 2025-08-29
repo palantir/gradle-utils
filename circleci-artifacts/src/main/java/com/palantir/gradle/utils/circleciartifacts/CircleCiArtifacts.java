@@ -88,12 +88,12 @@ public abstract class CircleCiArtifacts {
             String host = uri.getHost();
 
             if (scheme == null || host == null) {
-                return "Invalid URL";
+                throw new RuntimeException("Invalid CIRCLE_BUILD_URL: " + url);
             }
 
             return scheme + "://" + host;
         } catch (URISyntaxException e) {
-            return "Invalid URL";
+            throw new RuntimeException("Invalid CIRCLE_BUILD_URL: " + url, e);
         }
     }
 }
