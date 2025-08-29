@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.utils.providers;
 
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -27,24 +28,18 @@ import org.gradle.api.specs.Spec;
 public final class DefaultFailableProvider<T> implements FailableProvider<T> {
     private final Provider<T> delegate;
     private final Predicate<T> isFailure;
-    private final @Nullable Function<T, ? extends RuntimeException> exceptionMapper;
+    private final Function<T, ? extends RuntimeException> exceptionMapper;
 
     public DefaultFailableProvider(
-            Provider<T> delegate,
-            Predicate<T> isFailure,
-            @Nullable Function<T, ? extends RuntimeException> exceptionMapper) {
-        this.delegate = delegate;
-        this.isFailure = isFailure;
-        this.exceptionMapper = exceptionMapper;
+            Provider<T> delegate, Predicate<T> isFailure, Function<T, ? extends RuntimeException> exceptionMapper) {
+        this.delegate = Objects.requireNonNull(delegate, "delegate");
+        this.isFailure = Objects.requireNonNull(isFailure, "isFailure");
+        this.exceptionMapper = Objects.requireNonNull(exceptionMapper, "exceptionMapper");
     }
 
     private void throwIfFailed(T value) {
         if (isFailure.test(value)) {
-            if (exceptionMapper != null) {
-                throw exceptionMapper.apply(value);
-            } else {
-                throw new RuntimeException("FailableProvider: value is considered a failure: " + value);
-            }
+            throw exceptionMapper.apply(value);
         }
     }
 
@@ -95,43 +90,7 @@ public final class DefaultFailableProvider<T> implements FailableProvider<T> {
 
     @Override
     public <S> Provider<S> fold(Function<T, S> onSuccess, Function<T, S> onFailure) {
-        return delegate.map(value -> {
-            if (!isFailure.test(value)) {
-                return onSuccess.apply(value);
-            } else {
-                return onFailure.apply(value);
-            }
-        });
-    }
-
-    @Override
-    public boolean isPresent() {
-        return delegate.isPresent();
-    }
-
-    @Override
-    public Provider<T> orElse(T value) {
-        return delegate.map(currentValue -> {
-            if (isFailure.test(currentValue)) {
-                return value;
-            }
-            return currentValue;
-        });
-    }
-
-    @Override
-    public Provider<T> orElse(Provider<? extends T> provider) {
-        return delegate.flatMap(currentValue -> {
-            if (isFailure.test(currentValue)) {
-                return provider;
-            }
-            return delegate;
-        });
-    }
-
-    @Override
-    public Provider<T> forUseAtConfigurationTime() {
-        return new DefaultFailableProvider<>(delegate.forUseAtConfigurationTime(), isFailure, exceptionMapper);
+        return delegate.map(value -> isFailure.test(value) ? onFailure.apply(value) : onSuccess.apply(value));
     }
 
     @Override
@@ -153,24 +112,48 @@ public final class DefaultFailableProvider<T> implements FailableProvider<T> {
     @Override
     public Provider<T> filter(Spec<? super T> spec) {
         Provider<T> filtered = delegate.filter(value -> {
+            // Always pass through failures so they can be thrown later
             if (isFailure.test(value)) {
-                return true; // Always pass through failures so they can be thrown later
+                return true;
             }
             return spec.isSatisfiedBy(value);
         });
         return new DefaultFailableProvider<>(filtered, isFailure, exceptionMapper);
     }
 
-    public <U, R> Provider<R> zip(Provider<U> right, BiFunction<? super T, ? super U, ? extends R> combiner) {
-        boolean rightIsFailable = right instanceof DefaultFailableProvider;
-        Provider<U> rightDelegate = rightIsFailable ? ((DefaultFailableProvider<U>) right).delegate : right;
+    @Override
+    public Provider<T> orElse(T value) {
+        return delegate.map(currentValue -> isFailure.test(currentValue) ? value : currentValue);
+    }
 
-        return delegate.zip(rightDelegate, (leftValue, rightValue) -> {
-            throwIfFailed(leftValue);
-            if (rightIsFailable) {
-                ((DefaultFailableProvider<U>) right).throwIfFailed(rightValue);
-            }
-            return combiner.apply(leftValue, rightValue);
-        });
+    @Override
+    public Provider<T> orElse(Provider<? extends T> provider) {
+        return delegate.flatMap(currentValue -> isFailure.test(currentValue) ? provider : delegate);
+    }
+
+    @Override
+    public Provider<T> forUseAtConfigurationTime() {
+        return new DefaultFailableProvider<>(delegate.forUseAtConfigurationTime(), isFailure, exceptionMapper);
+    }
+
+    public <U, R> Provider<R> zip(Provider<U> right, BiFunction<? super T, ? super U, ? extends R> combiner) {
+        if (right instanceof DefaultFailableProvider) {
+            DefaultFailableProvider<U> rightFailable = (DefaultFailableProvider<U>) right;
+            return delegate.zip(rightFailable.delegate, (leftValue, rightValue) -> {
+                throwIfFailed(leftValue);
+                rightFailable.throwIfFailed(rightValue);
+                return combiner.apply(leftValue, rightValue);
+            });
+        } else {
+            return delegate.zip(right, (leftValue, rightValue) -> {
+                throwIfFailed(leftValue);
+                return combiner.apply(leftValue, rightValue);
+            });
+        }
+    }
+
+    @Override
+    public boolean isPresent() {
+        return delegate.isPresent();
     }
 }
