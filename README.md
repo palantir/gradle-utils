@@ -109,8 +109,8 @@ public abstract class MyTaskOrExtension {
             success -> "Success: " + success.stdOut(),
             failure -> "Failed with code: " + failure.result().getExitValue()
         ).get();
-        
-        // 3. Map successful results (failures propagate)
+
+        // 3. Map successful results (throws on failure when accessed)
         Provider<String> stdout = result.map(r -> r.stdOut().trim());
         
         // 4. Custom exception handling
@@ -152,7 +152,7 @@ The `exec()` method returns a `FallibleProvider<GradleExecResult>` which extends
 - **`getOrThrow(Function<T,Exception> exceptionSupplier)`** - Get result or throw custom exception
 
 #### Chaining Operations
-- **`map(Function<T,R> mapper)`** - Transform successful results (failures propagate)
+- **`map(Function<T,R> mapper)`** - Transform successful results (throws on failure when accessed)
 - **`filter(Predicate<T> predicate)`** - Filter successful results
 - **`zip(Provider<R> other, BiFunction<T,R,S> combiner)`** - Combine with another provider
 
