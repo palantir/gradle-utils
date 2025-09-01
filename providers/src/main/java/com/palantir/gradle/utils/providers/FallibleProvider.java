@@ -32,7 +32,7 @@ public interface FallibleProvider<T> extends Provider<T> {
      */
     static <T> FallibleProvider<T> of(
             Provider<T> delegate, Function<T, Boolean> isFailure, Function<T, ? extends RuntimeException> errorMapper) {
-        return new DefaultFailableProvider<>(delegate, isFailure::apply, errorMapper);
+        return new DefaultFallibleProvider<>(delegate, isFailure::apply, errorMapper);
     }
 
     /**

@@ -28,7 +28,7 @@ import org.immutables.value.Value;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-class FailableProviderTest {
+class FallibleProviderTest {
 
     @Value.Immutable
     public interface TestValue {
@@ -52,7 +52,7 @@ class FailableProviderTest {
     }
 
     private FallibleProvider<TestValue> createProvider(TestValue testValue) {
-        return new DefaultFailableProvider<>(
+        return new DefaultFallibleProvider<>(
                 project.provider(() -> testValue),
                 TestValue::isFailure,
                 value -> new IllegalStateException("Failure: " + value.value()));
@@ -251,7 +251,7 @@ class FailableProviderTest {
         Predicate<TestValue> failIfValueIsBar = val -> val.value().equals("bar");
         Function<TestValue, RuntimeException> exceptionMapper =
                 val -> new IllegalArgumentException("bad: " + val.value());
-        FallibleProvider<TestValue> provider = new DefaultFailableProvider<>(
+        FallibleProvider<TestValue> provider = new DefaultFallibleProvider<>(
                 project.provider(() -> TestValue.of("bar", false)), failIfValueIsBar, exceptionMapper);
         assertThatThrownBy(provider::get)
                 .isInstanceOf(IllegalArgumentException.class)
@@ -287,7 +287,7 @@ class FailableProviderTest {
             return TestValue.of("lazy", false);
         });
         FallibleProvider<TestValue> provider =
-                new DefaultFailableProvider<>(lazy, _v -> false, _v -> new RuntimeException("fail"));
+                new DefaultFallibleProvider<>(lazy, _v -> false, _v -> new RuntimeException("fail"));
         assertThat(calls.get()).isZero();
         provider.get();
         assertThat(calls.get()).isEqualTo(1);

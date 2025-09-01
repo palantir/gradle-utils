@@ -25,12 +25,12 @@ import org.gradle.api.Transformer;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.specs.Spec;
 
-final class DefaultFailableProvider<T> implements FallibleProvider<T> {
+final class DefaultFallibleProvider<T> implements FallibleProvider<T> {
     private final Provider<T> delegate;
     private final Predicate<T> isFailure;
     private final Function<T, ? extends RuntimeException> exceptionMapper;
 
-    DefaultFailableProvider(
+    DefaultFallibleProvider(
             Provider<T> delegate, Predicate<T> isFailure, Function<T, ? extends RuntimeException> exceptionMapper) {
         this.delegate = Preconditions.checkNotNull(delegate, "delegate");
         this.isFailure = Preconditions.checkNotNull(isFailure, "isFailure");
@@ -80,7 +80,7 @@ final class DefaultFailableProvider<T> implements FallibleProvider<T> {
 
     @Override
     public FallibleProvider<T> mapFailure(Function<T, ? extends RuntimeException> mapper) {
-        return new DefaultFailableProvider<>(delegate, isFailure, mapper);
+        return new DefaultFallibleProvider<>(delegate, isFailure, mapper);
     }
 
     @Override
@@ -112,7 +112,7 @@ final class DefaultFailableProvider<T> implements FallibleProvider<T> {
     @Override
     public Provider<T> filter(Spec<? super T> spec) {
         Provider<T> filtered = delegate.filter(value -> isFailure.test(value) || spec.isSatisfiedBy(value));
-        return new DefaultFailableProvider<>(filtered, isFailure, exceptionMapper);
+        return new DefaultFallibleProvider<>(filtered, isFailure, exceptionMapper);
     }
 
     @Override
@@ -127,16 +127,16 @@ final class DefaultFailableProvider<T> implements FallibleProvider<T> {
 
     @Override
     public Provider<T> forUseAtConfigurationTime() {
-        return new DefaultFailableProvider<>(delegate.forUseAtConfigurationTime(), isFailure, exceptionMapper);
+        return new DefaultFallibleProvider<>(delegate.forUseAtConfigurationTime(), isFailure, exceptionMapper);
     }
 
     @Override
     public <U, R> Provider<R> zip(Provider<U> right, BiFunction<? super T, ? super U, ? extends R> combiner) {
-        if (right instanceof DefaultFailableProvider) {
-            DefaultFailableProvider<U> rightFailable = (DefaultFailableProvider<U>) right;
-            return delegate.zip(rightFailable.delegate, (leftValue, rightValue) -> {
+        if (right instanceof DefaultFallibleProvider) {
+            DefaultFallibleProvider<U> rightFallible = (DefaultFallibleProvider<U>) right;
+            return delegate.zip(rightFallible.delegate, (leftValue, rightValue) -> {
                 throwIfFailed(leftValue);
-                rightFailable.throwIfFailed(rightValue);
+                rightFallible.throwIfFailed(rightValue);
                 return combiner.apply(leftValue, rightValue);
             });
         } else {
