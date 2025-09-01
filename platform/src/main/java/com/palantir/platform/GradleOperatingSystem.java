@@ -16,8 +16,8 @@
 
 package com.palantir.platform;
 
-import com.palantir.gradle.utils.exec.ExecResultWithOutput;
 import com.palantir.gradle.utils.exec.GradleExec;
+import com.palantir.gradle.utils.exec.GradleExecResult;
 import java.util.Locale;
 import javax.inject.Inject;
 import org.gradle.api.provider.Provider;
@@ -88,7 +88,7 @@ public abstract class GradleOperatingSystem {
                         });
     }
 
-    private OperatingSystem parseLibcFromOutput(ExecResultWithOutput execResult) {
+    private OperatingSystem parseLibcFromOutput(GradleExecResult execResult) {
         String lowercaseOutput =
                 (execResult.stdOut().trim() + "\n" + execResult.stdErr().trim()).toLowerCase(Locale.ROOT);
 

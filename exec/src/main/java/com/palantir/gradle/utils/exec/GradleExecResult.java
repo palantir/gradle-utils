@@ -20,15 +20,15 @@ import org.gradle.process.ExecResult;
 import org.immutables.value.Value;
 
 @Value.Immutable
-public interface ExecResultWithOutput {
+public interface GradleExecResult {
     String stdOut();
 
     String stdErr();
 
     ExecResult result();
 
-    static ExecResultWithOutput of(String stdOut, String stdErr, ExecResult result) {
-        return ImmutableExecResultWithOutput.builder()
+    static GradleExecResult of(String stdOut, String stdErr, ExecResult result) {
+        return ImmutableGradleExecResult.builder()
                 .stdOut(stdOut)
                 .stdErr(stdErr)
                 .result(result)

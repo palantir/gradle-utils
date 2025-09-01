@@ -15,7 +15,7 @@
  */
 package com.palantir.gradle.utils.exec;
 
-import com.palantir.gradle.utils.providers.FailableProvider;
+import com.palantir.gradle.utils.providers.FallibleProvider;
 import com.palantir.gradle.utils.providers.Zipper;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
@@ -37,7 +37,7 @@ public abstract class GradleExec {
     protected abstract Zipper getZip();
 
     /**
-     * Executes a process and returns a FailableProvider for the result.
+     * Executes a process and returns a FallibleProvider for the result.
      * <p>
      * Usage:
      * <pre>
@@ -55,7 +55,7 @@ public abstract class GradleExec {
      * def output = result.get().stdOut
      * </pre>
      */
-    public FailableProvider<ExecResultWithOutput> exec(Action<? super ExecSpec> action) {
+    public FallibleProvider<GradleExecResult> exec(Action<? super ExecSpec> action) {
         AtomicReference<String> executable = new AtomicReference<>();
 
         Action<ExecSpec> captureAction = spec -> {
@@ -66,13 +66,13 @@ public abstract class GradleExec {
 
         ExecOutput execOutput = getProviderFactory().exec(captureAction);
 
-        Provider<ExecResultWithOutput> resultProvider = getZip().zip3(
+        Provider<GradleExecResult> resultProvider = getZip().zip3(
                         execOutput.getResult(),
                         execOutput.getStandardOutput().getAsText(),
                         execOutput.getStandardError().getAsText(),
-                        (result, stdout, stderr) -> ExecResultWithOutput.of(stdout, stderr, result));
+                        (result, stdout, stderr) -> GradleExecResult.of(stdout, stderr, result));
 
-        return FailableProvider.of(
+        return FallibleProvider.of(
                 resultProvider,
                 result -> result.result().getExitValue() != 0,
                 result -> new ExecFailedException(executable.get(), result));

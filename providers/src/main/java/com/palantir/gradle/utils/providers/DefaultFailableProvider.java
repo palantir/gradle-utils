@@ -25,7 +25,7 @@ import org.gradle.api.Transformer;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.specs.Spec;
 
-final class DefaultFailableProvider<T> implements FailableProvider<T> {
+final class DefaultFailableProvider<T> implements FallibleProvider<T> {
     private final Provider<T> delegate;
     private final Predicate<T> isFailure;
     private final Function<T, ? extends RuntimeException> exceptionMapper;
@@ -79,7 +79,7 @@ final class DefaultFailableProvider<T> implements FailableProvider<T> {
     }
 
     @Override
-    public FailableProvider<T> mapFailure(Function<T, ? extends RuntimeException> mapper) {
+    public FallibleProvider<T> mapFailure(Function<T, ? extends RuntimeException> mapper) {
         return new DefaultFailableProvider<>(delegate, isFailure, mapper);
     }
 

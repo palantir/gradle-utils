@@ -25,12 +25,12 @@ import org.gradle.api.provider.Provider;
  *
  * @param <T> The type of value this provider produces
  */
-public interface FailableProvider<T> extends Provider<T> {
+public interface FallibleProvider<T> extends Provider<T> {
 
     /**
-     * Creates a FailableProvider from a regular provider with a failure predicate.
+     * Creates a FallibleProvider from a regular provider with a failure predicate.
      */
-    static <T> FailableProvider<T> of(
+    static <T> FallibleProvider<T> of(
             Provider<T> delegate, Function<T, Boolean> isFailure, Function<T, ? extends RuntimeException> errorMapper) {
         return new DefaultFailableProvider<>(delegate, isFailure::apply, errorMapper);
     }
@@ -41,9 +41,9 @@ public interface FailableProvider<T> extends Provider<T> {
     T getOrThrow(Function<T, ? extends RuntimeException> exceptionMapper);
 
     /**
-     * Returns a new FailableProvider with a different exception mapper.
+     * Returns a new FallibleProvider with a different exception mapper.
      */
-    FailableProvider<T> mapFailure(Function<T, ? extends RuntimeException> exceptionMapper);
+    FallibleProvider<T> mapFailure(Function<T, ? extends RuntimeException> exceptionMapper);
 
     /**
      * Returns the raw value without throwing on failure.

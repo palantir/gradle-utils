@@ -18,7 +18,7 @@ package com.palantir.gradle.utils.exec;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.palantir.gradle.utils.providers.FailableProvider;
+import com.palantir.gradle.utils.providers.FallibleProvider;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -48,7 +48,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("echo", "test");
 
         // When
-        FailableProvider<ExecResultWithOutput> resultProvider = gradleExec.exec(action);
+        FallibleProvider<GradleExecResult> resultProvider = gradleExec.exec(action);
 
         // Then
         assertThat(resultProvider).isNotNull();
@@ -66,7 +66,7 @@ class GradleExecTest {
         };
 
         // When - create the provider
-        FailableProvider<ExecResultWithOutput> resultProvider = gradleExec.exec(action);
+        FallibleProvider<GradleExecResult> resultProvider = gradleExec.exec(action);
 
         // Then - side effect should not have occurred yet
         assertThat(Files.exists(sideEffectFile)).isFalse();
@@ -87,8 +87,8 @@ class GradleExecTest {
         };
 
         // When
-        FailableProvider<ExecResultWithOutput> resultProvider = gradleExec.exec(action);
-        ExecResultWithOutput execResult = resultProvider.get();
+        FallibleProvider<GradleExecResult> resultProvider = gradleExec.exec(action);
+        GradleExecResult execResult = resultProvider.get();
 
         // Then - verify that stdout, stderr, and result are all properly captured
         assertThat(execResult.stdOut().trim()).isEqualTo("stdout");
@@ -102,10 +102,10 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("date", "+%s%N"); // Unix timestamp with nanoseconds
 
         // When
-        FailableProvider<ExecResultWithOutput> provider = gradleExec.exec(action);
-        ExecResultWithOutput result1 = provider.get();
+        FallibleProvider<GradleExecResult> provider = gradleExec.exec(action);
+        GradleExecResult result1 = provider.get();
         Thread.sleep(10);
-        ExecResultWithOutput result2 = provider.get();
+        GradleExecResult result2 = provider.get();
 
         // Then - both calls should return the exact same timestamp as should not re-run command
         assertThat(result1.stdOut()).isEqualTo(result2.stdOut());
@@ -118,7 +118,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("echo", "hello");
 
         // When
-        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action);
+        FallibleProvider<GradleExecResult> result = gradleExec.exec(action);
 
         // Then
         assertThat(result.get().stdOut().trim()).isEqualTo("hello");
@@ -131,7 +131,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "exit 42");
 
         // When
-        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action);
+        FallibleProvider<GradleExecResult> result = gradleExec.exec(action);
 
         // Then
         assertThat(result.getRaw().result().getExitValue()).isEqualTo(42);
@@ -143,7 +143,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "echo 'error' >&2; exit 1");
 
         // When
-        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action);
+        FallibleProvider<GradleExecResult> result = gradleExec.exec(action);
 
         // Then
         assertThatThrownBy(result::get)
@@ -158,7 +158,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "echo 'custom error' >&2; exit 1");
 
         // When
-        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action);
+        FallibleProvider<GradleExecResult> result = gradleExec.exec(action);
 
         // Then
         assertThatThrownBy(() -> result.getOrThrow(output ->
@@ -173,7 +173,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "echo 'not found' >&2; exit 127");
 
         // When
-        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action).mapFailure(output -> {
+        FallibleProvider<GradleExecResult> result = gradleExec.exec(action).mapFailure(output -> {
             if (output.result().getExitValue() == 127) {
                 return new IllegalStateException(
                         "Command not found: " + output.stdErr().trim());
@@ -193,7 +193,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("echo", "success");
 
         // When
-        FailableProvider<ExecResultWithOutput> result =
+        FallibleProvider<GradleExecResult> result =
                 gradleExec.exec(action).mapFailure(_output -> new IllegalStateException("This should not be thrown"));
 
         // Then
@@ -206,10 +206,10 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "echo 'output'; exit 1");
 
         // When
-        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action);
+        FallibleProvider<GradleExecResult> result = gradleExec.exec(action);
 
         // Then - getRaw() should not throw even for failures
-        ExecResultWithOutput raw = result.getRaw();
+        GradleExecResult raw = result.getRaw();
         assertThat(raw.stdOut().trim()).isEqualTo("output");
         assertThat(raw.result().getExitValue()).isEqualTo(1);
     }
@@ -283,10 +283,10 @@ class GradleExecTest {
         };
 
         // When
-        FailableProvider<ExecResultWithOutput> result = gradleExec.exec(action);
+        FallibleProvider<GradleExecResult> result = gradleExec.exec(action);
 
         // Then
-        ExecResultWithOutput raw = result.getRaw();
+        GradleExecResult raw = result.getRaw();
         assertThat(raw.stdOut().trim()).isEqualTo("stdout message");
         assertThat(raw.stdErr().trim()).isEqualTo("stderr message");
         assertThat(raw.result().getExitValue()).isEqualTo(1);
@@ -298,7 +298,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "exit 2");
 
         // When
-        FailableProvider<ExecResultWithOutput> result = gradleExec
+        FallibleProvider<GradleExecResult> result = gradleExec
                 .exec(action)
                 .mapFailure(_output -> new RuntimeException("First mapping"))
                 .mapFailure(_output -> new IllegalStateException("Second mapping"));
@@ -330,7 +330,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("echo", "test");
 
         // When - filter that passes
-        Provider<ExecResultWithOutput> filtered =
+        Provider<GradleExecResult> filtered =
                 gradleExec.exec(action).filter(result -> result.stdOut().contains("test"));
 
         // Then
@@ -338,7 +338,7 @@ class GradleExecTest {
         assertThat(filtered.get().stdOut().trim()).isEqualTo("test");
 
         // When - filter that fails
-        Provider<ExecResultWithOutput> filteredOut =
+        Provider<GradleExecResult> filteredOut =
                 gradleExec.exec(action).filter(result -> result.stdOut().contains("notfound"));
 
         // Then
@@ -351,7 +351,7 @@ class GradleExecTest {
         Action<ExecSpec> action = spec -> spec.commandLine("sh", "-c", "exit 1");
 
         // When - even with a filter that would reject, failures pass through
-        FailableProvider<ExecResultWithOutput> filtered = (FailableProvider<ExecResultWithOutput>)
+        FallibleProvider<GradleExecResult> filtered = (FallibleProvider<GradleExecResult>)
                 gradleExec.exec(action).filter(_result -> false); // This would reject everything
 
         // Then - failure still propagates
@@ -396,10 +396,10 @@ class GradleExecTest {
         Action<ExecSpec> failAction = spec -> spec.commandLine("sh", "-c", "exit 1");
 
         // When getting a successful result
-        ExecResultWithOutput defaultValue = gradleExec.exec(successAction).get(); // Reuse the success result as default
+        GradleExecResult defaultValue = gradleExec.exec(successAction).get(); // Reuse the success result as default
 
         // When
-        ExecResultWithOutput result = gradleExec.exec(failAction).getOrElse(defaultValue);
+        GradleExecResult result = gradleExec.exec(failAction).getOrElse(defaultValue);
 
         // Then
         assertThat(result.stdOut().trim()).isEqualTo("success");
@@ -411,7 +411,7 @@ class GradleExecTest {
         Action<ExecSpec> failAction = spec -> spec.commandLine("sh", "-c", "exit 1");
 
         // When
-        ExecResultWithOutput result = gradleExec.exec(failAction).getOrNull();
+        GradleExecResult result = gradleExec.exec(failAction).getOrNull();
 
         // Then
         assertThat(result).isNull();

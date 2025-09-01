@@ -20,11 +20,11 @@ package com.palantir.gradle.utils.exec;
  * Exception thrown when a process execution fails with a non-zero exit code.
  */
 public class ExecFailedException extends RuntimeException {
-    public ExecFailedException(String executable, ExecResultWithOutput execResult) {
+    public ExecFailedException(String executable, GradleExecResult execResult) {
         super(buildMessage(executable, execResult));
     }
 
-    private static String buildMessage(String executable, ExecResultWithOutput execResult) {
+    private static String buildMessage(String executable, GradleExecResult execResult) {
         StringBuilder message = new StringBuilder();
         message.append("Process '")
                 .append(executable != null ? executable : "<unknown>")
