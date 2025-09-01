@@ -16,7 +16,9 @@
 
 package com.palantir.gradle.utils.providers;
 
+import com.palantir.logsafe.exceptions.SafeIllegalStateException;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import org.gradle.api.provider.Provider;
 
 /**
@@ -28,11 +30,31 @@ import org.gradle.api.provider.Provider;
 public interface FallibleProvider<T> extends Provider<T> {
 
     /**
+     * Creates a FallibleProvider from a regular provider that always succeeds.
+     * Use failOn() to add failure conditions.
+     */
+    static <T> FallibleProvider<T> of(Provider<T> delegate) {
+        return new DefaultFallibleProvider<>(
+                delegate, _value -> false, _value -> new SafeIllegalStateException("Unexpected failure"));
+    }
+
+    /**
      * Creates a FallibleProvider from a regular provider with a failure predicate.
      */
     static <T> FallibleProvider<T> of(
-            Provider<T> delegate, Function<T, Boolean> isFailure, Function<T, ? extends RuntimeException> errorMapper) {
-        return new DefaultFallibleProvider<>(delegate, isFailure::apply, errorMapper);
+            Provider<T> delegate, Predicate<T> isFailure, Function<T, ? extends RuntimeException> errorMapper) {
+        return new DefaultFallibleProvider<>(delegate, isFailure, errorMapper);
+    }
+
+    /**
+     * Adds a failure condition to this provider.
+     *
+     * @param isFailure Predicate to check if the value represents a failure
+     * @param errorMapper Function to create an exception from a failure value
+     * @return A new FallibleProvider with the failure condition added
+     */
+    default FallibleProvider<T> failOn(Predicate<T> isFailure, Function<T, ? extends RuntimeException> errorMapper) {
+        return FallibleProvider.of(this, isFailure, errorMapper);
     }
 
     /**
