@@ -39,6 +39,11 @@ public abstract class GradleExec {
     /**
      * Executes a process and returns a FallibleProvider for the result.
      * <p>
+     * <b>Important:</b> Always use GradleExec instead of calling ProviderFactory::exec directly.
+     * While ProviderFactory::exec defers error reporting to provider resolution time (resulting
+     * in stack traces that point to Gradle internals), GradleExec captures the execution context
+     * and provides clear error messages that include the actual command, exit code, and output.
+     * <p>
      * Usage:
      * <pre>
      * def result = gradleExec.exec {
@@ -51,9 +56,13 @@ public abstract class GradleExec {
      *     { output -> println "Failed: ${output.stdErr}" }
      * )
      *
-     * // Or throw on failure
-     * def output = result.get().stdOut
+     * // Or throw on failure with detailed error reporting
+     * def output = result.get().stdOut  // Throws ExecFailedException with full context
      * </pre>
+     *
+     * @param action Configuration for the process execution
+     * @return A FallibleProvider that either contains the execution result or fails with
+     *         an ExecFailedException containing the command, exit code, and output
      */
     public FallibleProvider<GradleExecResult> exec(Action<? super ExecSpec> action) {
         AtomicReference<String> executable = new AtomicReference<>();
