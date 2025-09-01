@@ -94,13 +94,67 @@ public abstract class MyTaskOrExtension {
     protected abstract GradleExec getGradleExec();
     
     public void runCommand() {
-        // Lazy execution - returns Provider<ExecResultWithOutput>
-        Provider<String> result = getGradleExec()
-            .exec(spec -> spec.commandLine("echo", "hello"))
-            .map(execResult -> execResult.stdOut().trim());
+        // Returns a FallibleProvider<GradleExecResult> for lazy execution
+        FallibleProvider<GradleExecResult> result = getGradleExec()
+            .exec(spec -> spec.commandLine("git", "status"));
+            
+        // Various ways to handle the result:
+        
+        // 1. Get the result (throws ExecFailedException on non-zero exit)
+        GradleExecResult output = result.get();
+        System.out.println(output.stdOut());
+        
+        // 2. Handle both success and failure cases
+        String message = result.handle(
+            success -> "Success: " + success.stdOut(),
+            failure -> "Failed with code: " + failure.result().getExitValue()
+        ).get();
+        
+        // 3. Map successful results (failures propagate)
+        Provider<String> stdout = result.map(r -> r.stdOut().trim());
+        
+        // 4. Custom exception handling
+        result.mapFailure(failure -> {
+            if (failure.result().getExitValue() == 128) {
+                return new IllegalStateException("Git repository not found");
+            }
+            return new RuntimeException("Command failed: " + failure.stdErr());
+        });
+        
+        // 5. Get raw result without throwing (useful for inspecting failures)
+        GradleExecResult raw = result.getRaw();
+        if (raw.result().getExitValue() != 0) {
+            System.err.println("Command failed: " + raw.stdErr());
+        }
+        
+        // 6. Provide default value on failure
+        GradleExecResult resultOrDefault = result.getOrElse(defaultResult);
+        
+        // 7. Get null on failure instead of throwing
+        GradleExecResult resultOrNull = result.getOrNull();
     }
 }
 ```
+
+### Working with `FallibleProvider`
+
+The `exec()` method returns a `FallibleProvider<GradleExecResult>` which extends Gradle's `Provider` interface with additional methods for handling failures:
+
+#### Success/Failure Handling
+- **`get()`** - Returns the result or throws `ExecFailedException` if the command failed
+- **`getRaw()`** - Always returns the result without throwing, even for non-zero exit codes
+- **`getOrNull()`** - Returns the result on success, `null` on failure
+- **`getOrElse(T defaultValue)`** - Returns the result on success, default value on failure
+- **`handle(Function<T,R> onSuccess, Function<T,R> onFailure)`** - Transform both success and failure cases
+
+#### Exception Customization
+- **`mapFailure(Function<T,Exception> mapper)`** - Transform failures into custom exceptions
+- **`getOrThrow(Function<T,Exception> exceptionSupplier)`** - Get result or throw custom exception
+
+#### Chaining Operations
+- **`map(Function<T,R> mapper)`** - Transform successful results (failures propagate)
+- **`filter(Predicate<T> predicate)`** - Filter successful results
+- **`zip(Provider<R> other, BiFunction<T,R,S> combiner)`** - Combine with another provider
 
 ## `Zipper`
 

@@ -37,7 +37,12 @@ public abstract class GradleExec {
     protected abstract Zipper getZip();
 
     /**
-     * Executes a process and returns a FallibleProvider for the result.
+     * A utility class for executing shell commands in a configuration cache-friendly way.
+     * <p>
+     * This class eliminates the need to manually zip providers from {@code ProviderFactory.exec()}
+     * by providing a clean API that combines stdout, stderr, and exit results into a single provider.
+     * The resulting {@link FallibleProvider} makes it easy to handle both success and failure cases
+     * with proper error reporting.
      * <p>
      * <b>Important:</b> Always use GradleExec instead of calling ProviderFactory::exec directly.
      * While ProviderFactory::exec defers error reporting to provider resolution time (resulting
