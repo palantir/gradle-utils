@@ -27,11 +27,18 @@ public interface GradleExecResult {
 
     ExecResult result();
 
-    static GradleExecResult of(String stdOut, String stdErr, ExecResult result) {
+    String executable();
+
+    static GradleExecResult of(String stdOut, String stdErr, ExecResult result, String executable) {
         return ImmutableGradleExecResult.builder()
                 .stdOut(stdOut)
                 .stdErr(stdErr)
                 .result(result)
+                .executable(executable)
                 .build();
+    }
+
+    default ExecFailedException toException() {
+        return new ExecFailedException(executable(), this);
     }
 }

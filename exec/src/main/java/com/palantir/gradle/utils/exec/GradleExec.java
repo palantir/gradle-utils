@@ -79,11 +79,9 @@ public abstract class GradleExec {
                         execOutput.getResult(),
                         execOutput.getStandardOutput().getAsText(),
                         execOutput.getStandardError().getAsText(),
-                        (result, stdout, stderr) -> GradleExecResult.of(stdout, stderr, result));
+                        (result, stdout, stderr) -> GradleExecResult.of(stdout, stderr, result, executable.get()));
 
         return FallibleProvider.of(resultProvider)
-                .failOn(
-                        result -> result.result().getExitValue() != 0,
-                        result -> new ExecFailedException(executable.get(), result));
+                .failOn(result -> result.result().getExitValue() != 0, GradleExecResult::toException);
     }
 }
