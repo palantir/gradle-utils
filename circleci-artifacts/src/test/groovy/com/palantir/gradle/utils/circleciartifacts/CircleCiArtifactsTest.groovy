@@ -104,4 +104,30 @@ class CircleCiArtifactsTest extends IntegrationSpec {
         result.standardOutput.find "External location: palantir/gradle-utils/1234/artifacts/2345/.*/location/in/artifacts"
         result.standardOutput.find "Circle link: https://<circle_url>/output/job/abc-123-def-456/artifacts/2345/.*/location/in/artifacts"
     }
+
+
+    def 'handles custom CIRCLE_HOME_DIRECTORY environment variable'() {
+        given:
+        def customHome = '/custom/home/path/'
+        file('gradle.properties') << """
+            __TESTING = true
+            __TESTING_CI=true
+            __TESTING_CIRCLE_ARTIFACTS=${customHome}circle-artifacts
+            __TESTING_CIRCLE_PROJECT_USERNAME=palantir
+            __TESTING_CIRCLE_PROJECT_REPONAME=gradle-utils
+            __TESTING_CIRCLE_BUILD_NUM=1234
+            __TESTING_CIRCLE_NODE_INDEX=2345
+            __TESTING_CIRCLE_BUILD_URL=https://circleci.com/gh/palantir/gradle-utils/1234
+            __TESTING_CIRCLE_WORKFLOW_JOB_ID=abc-123-def-456
+            __TESTING_CIRCLE_HOME_DIRECTORY=${customHome}
+        """.stripIndent(true)
+
+        when: 'running the task to print the path and location'
+        def result = runTasksSuccessfully('printCircleCiLocation')
+
+        then: 'the custom home directory is properly replaced with /~/'
+        result.standardOutput.find "Physical path: ${customHome}circle-artifacts/location/in/artifacts"
+        result.standardOutput.find 'External location: palantir/gradle-utils/1234/artifacts/2345/~/circle-artifacts/location/in/artifacts'
+        result.standardOutput.find 'Circle link: https://circleci.com/output/job/abc-123-def-456/artifacts/2345/~/circle-artifacts/location/in/artifacts'
+    }
 }
