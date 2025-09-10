@@ -55,7 +55,7 @@ public abstract class CircleCiArtifacts {
                 .orElse("/home/circleci/");
         Provider<String> circleArtifacts = physicalArtifactPath
                 .map(file -> file.getAsFile().getAbsolutePath())
-                .zip(circleHome, (artifacts, home) -> artifacts.replace(home, "/~/"));
+                .zip(circleHome, (artifacts, home) -> artifacts.replaceFirst(home, "/~/"));
         Provider<String> circleUrl = getVariables()
                 .envVarOrFromTestingProperty("CIRCLE_BUILD_URL")
                 .map(CircleCiArtifacts::extractDomain)
