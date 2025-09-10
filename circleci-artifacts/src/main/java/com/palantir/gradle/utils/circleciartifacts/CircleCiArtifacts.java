@@ -50,9 +50,12 @@ public abstract class CircleCiArtifacts {
         Provider<String> circleProjectReponame = getVariables().envVarOrFromTestingProperty("CIRCLE_PROJECT_REPONAME");
         Provider<String> circleBuildNum = getVariables().envVarOrFromTestingProperty("CIRCLE_BUILD_NUM");
         Provider<String> circleNodeIndex = getVariables().envVarOrFromTestingProperty("CIRCLE_NODE_INDEX");
+        Provider<String> circleHome = getVariables()
+                .envVarOrFromTestingProperty("CIRCLE_HOME_DIRECTORY")
+                .orElse("/home/circleci/");
         Provider<String> circleArtifacts = physicalArtifactPath
                 .map(file -> file.getAsFile().getAbsolutePath())
-                .map(artifacts -> artifacts.replace("/home/circleci/", "/~/"));
+                .zip(circleHome, (artifacts, home) -> artifacts.replaceFirst(home, "/~/"));
         Provider<String> circleUrl = getVariables()
                 .envVarOrFromTestingProperty("CIRCLE_BUILD_URL")
                 .map(CircleCiArtifacts::extractDomain)
