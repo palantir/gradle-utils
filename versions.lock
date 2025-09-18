@@ -18,11 +18,11 @@ com.netflix.nebula:nebula-test:10.6.2 (1 constraints: 3b053b3b)
 
 junit:junit:4.13.2 (1 constraints: 1b0e1d4c)
 
-net.bytebuddy:byte-buddy:1.15.11 (1 constraints: 7f0bc9ea)
+net.bytebuddy:byte-buddy:1.17.7 (1 constraints: 560b56df)
 
 org.apiguardian:apiguardian-api:1.1.2 (6 constraints: 5366ce6e)
 
-org.assertj:assertj-core:3.27.4 (1 constraints: 4205523b)
+org.assertj:assertj-core:3.27.5 (1 constraints: 4305533b)
 
 org.codehaus.groovy:groovy:3.0.12 (2 constraints: 781b1f9d)
 
