@@ -4,7 +4,7 @@ com.fasterxml.jackson.core:jackson-annotations:2.19.2 (1 constraints: 40054c3b)
 
 com.gradle:develocity-gradle-plugin-adapters:1.2.1 (1 constraints: 0605f735)
 
-org.apache.commons:commons-lang3:3.18.0 (1 constraints: 3e054d3b)
+org.apache.commons:commons-lang3:3.19.0 (1 constraints: 3f05503b)
 
 org.immutables:value:2.11.3 (1 constraints: 3905353b)
 
