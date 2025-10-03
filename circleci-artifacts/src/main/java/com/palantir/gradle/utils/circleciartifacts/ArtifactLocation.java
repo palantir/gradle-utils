@@ -25,10 +25,13 @@ public interface ArtifactLocation {
 
     String externalLocation();
 
-    static ArtifactLocation of(RegularFile physicalPath, String externalLocation) {
+    String circleLink();
+
+    static ArtifactLocation of(RegularFile physicalPath, String externalLocation, String circleLink) {
         return ImmutableArtifactLocation.builder()
                 .physicalPath(physicalPath)
                 .externalLocation(externalLocation)
+                .circleLink(circleLink)
                 .build();
     }
 }
