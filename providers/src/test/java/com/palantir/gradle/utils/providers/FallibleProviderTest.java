@@ -241,6 +241,7 @@ class FallibleProviderTest {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     void forUseAtConfigurationTime_delegates() {
         FallibleProvider<TestValue> provider = createProvider(TestValue.of("ok", false));
         assertThat(provider.forUseAtConfigurationTime().get().value()).isEqualTo("ok");
