@@ -126,6 +126,7 @@ final class DefaultFallibleProvider<T> implements FallibleProvider<T> {
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public Provider<T> forUseAtConfigurationTime() {
         return new DefaultFallibleProvider<>(delegate.forUseAtConfigurationTime(), isFailure, exceptionMapper);
     }
