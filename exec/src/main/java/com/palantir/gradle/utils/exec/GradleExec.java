@@ -15,16 +15,16 @@
  */
 package com.palantir.gradle.utils.exec;
 
+import com.palantir.gradle.utils.providers.FallibleProvider;
 import com.palantir.gradle.utils.providers.Zipper;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.inject.Inject;
 import org.gradle.api.Action;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.provider.ProviderFactory;
 import org.gradle.api.tasks.Nested;
 import org.gradle.process.ExecOutput;
-import org.gradle.process.ExecResult;
 import org.gradle.process.ExecSpec;
-import org.immutables.value.Value;
 
 public abstract class GradleExec {
 
@@ -37,51 +37,56 @@ public abstract class GradleExec {
     protected abstract Zipper getZip();
 
     /**
-     * Executes a process using the provided {@link Action} to configure the {@link ExecSpec}.
+     * A utility class for executing shell commands in a configuration cache-friendly way.
      * <p>
-     * This method always sets {@code ignoreExitValue} to {@code true} on the {@code ExecSpec},
-     * ensuring that the build does not fail regardless of the process exit code. Callers do need
-     * to handle exit codes manually.
+     * This class eliminates the need to manually zip providers from {@code ProviderFactory.exec()}
+     * by providing a clean API that combines stdout, stderr, and exit results into a single provider.
+     * The resulting {@link FallibleProvider} makes it easy to handle both success and failure cases
+     * with proper error reporting.
      * <p>
-     * The result includes the process's standard output, standard error, and the {@link ExecResult}.
+     * <b>Important:</b> Always use GradleExec instead of calling ProviderFactory::exec directly.
+     * While ProviderFactory::exec defers error reporting to provider resolution time (resulting
+     * in stack traces that point to Gradle internals), GradleExec captures the execution context
+     * and provides clear error messages that include the actual command, exit code, and output.
+     * <p>
+     * Usage:
+     * <pre>
+     * def result = gradleExec.exec {
+     *     commandLine 'git', 'status'
+     * }
      *
-     * @param action an action to configure the {@link ExecSpec} for the process to be executed
-     * @return a Provider of {@link ExecResultWithOutput} containing the standard output, standard error,
-     *         and execution result
+     * // Handle success/failure
+     * result.handle(
+     *     { output -> println "Success: ${output.stdOut}" },
+     *     { output -> println "Failed: ${output.stdErr}" }
+     * )
+     *
+     * // Or throw on failure with detailed error reporting
+     * def output = result.get().stdOut  // Throws ExecFailedException with full context
+     * </pre>
+     *
+     * @param action Configuration for the process execution
+     * @return A FallibleProvider that either contains the execution result or fails with
+     *         an ExecFailedException containing the command, exit code, and output
      */
-    public Provider<ExecResultWithOutput> exec(Action<? super ExecSpec> action) {
-        Action<ExecSpec> wrappedAction = spec -> {
+    public FallibleProvider<GradleExecResult> exec(Action<? super ExecSpec> action) {
+        AtomicReference<String> executable = new AtomicReference<>();
+
+        Action<ExecSpec> captureAction = spec -> {
             action.execute(spec);
+            executable.set(spec.getExecutable());
             spec.setIgnoreExitValue(true);
         };
 
-        ExecOutput execOutput = getProviderFactory().exec(wrappedAction);
+        ExecOutput execOutput = getProviderFactory().exec(captureAction);
 
-        Provider<String> stdoutProvider = execOutput.getStandardOutput().getAsText();
-        Provider<String> stderrProvider = execOutput.getStandardError().getAsText();
-        Provider<ExecResult> resultProvider = execOutput.getResult();
+        Provider<GradleExecResult> resultProvider = getZip().zip3(
+                        execOutput.getResult(),
+                        execOutput.getStandardOutput().getAsText(),
+                        execOutput.getStandardError().getAsText(),
+                        (result, stdout, stderr) -> GradleExecResult.of(stdout, stderr, result, executable.get()));
 
-        return getZip().zip3(
-                        resultProvider,
-                        stdoutProvider,
-                        stderrProvider,
-                        (result, stdout, stderr) -> ExecResultWithOutput.of(stdout, stderr, result));
-    }
-
-    @Value.Immutable
-    public interface ExecResultWithOutput {
-        String stdOut();
-
-        String stdErr();
-
-        ExecResult result();
-
-        static ExecResultWithOutput of(String stdOut, String stdErr, ExecResult result) {
-            return ImmutableExecResultWithOutput.builder()
-                    .stdOut(stdOut)
-                    .stdErr(stdErr)
-                    .result(result)
-                    .build();
-        }
+        return FallibleProvider.of(resultProvider)
+                .failOn(result -> result.result().getExitValue() != 0, GradleExecResult::toException);
     }
 }

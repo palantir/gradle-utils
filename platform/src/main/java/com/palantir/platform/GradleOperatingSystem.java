@@ -17,6 +17,7 @@
 package com.palantir.platform;
 
 import com.palantir.gradle.utils.exec.GradleExec;
+import com.palantir.gradle.utils.exec.GradleExecResult;
 import java.util.Locale;
 import javax.inject.Inject;
 import org.gradle.api.provider.Provider;
@@ -64,29 +65,42 @@ public abstract class GradleOperatingSystem {
     }
 
     private Provider<OperatingSystem> linuxLibcFromLdd() {
+        // Using handle to deal with both success and failure cases
+        // ldd --version exits with 0 for glibc and 1 for musl, both are valid
         return getGradleExec()
                 .exec(spec -> {
                     spec.commandLine("ldd", "--version");
                 })
-                .map(execResult -> {
-                    String lowercaseOutput = (execResult.stdOut().trim() + "\n"
-                                    + execResult.stdErr().trim())
-                            .toLowerCase(Locale.ROOT);
+                .handle(
+                        // Success case (exit code 0) - typically glibc
+                        this::parseLibcFromOutput,
+                        // Failure case - could be musl (exit 1) or actual failure
+                        failure -> {
+                            int exitCode = failure.result().getExitValue();
+                            if (exitCode == 1) {
+                                // Exit code 1 might be musl, check the output
+                                return parseLibcFromOutput(failure);
+                            }
+                            String output = failure.stdOut().trim() + "\n"
+                                    + failure.stdErr().trim();
+                            throw new RuntimeException(String.format(
+                                    "Failed to run ldd - exited with exit code %d. Output: %s.", exitCode, output));
+                        });
+    }
 
-                    if (lowercaseOutput.contains("glibc") || lowercaseOutput.contains("gnu libc")) {
-                        return OperatingSystem.LINUX_GLIBC;
-                    }
-                    if (lowercaseOutput.contains("musl")) {
-                        return OperatingSystem.LINUX_MUSL;
-                    }
+    private OperatingSystem parseLibcFromOutput(GradleExecResult execResult) {
+        String lowercaseOutput =
+                (execResult.stdOut().trim() + "\n" + execResult.stdErr().trim()).toLowerCase(Locale.ROOT);
 
-                    int exitValue = execResult.result().getExitValue();
-                    if (exitValue == 0 || exitValue == 1) {
-                        throw new UnsupportedOperationException(
-                                "Cannot work out libc used by this OS. ldd output was: " + lowercaseOutput);
-                    }
-                    throw new RuntimeException(String.format(
-                            "Failed to run ldd - exited with exit code %d. Output: %s.", exitValue, lowercaseOutput));
-                });
+        if (lowercaseOutput.contains("glibc") || lowercaseOutput.contains("gnu libc")) {
+            return OperatingSystem.LINUX_GLIBC;
+        }
+        if (lowercaseOutput.contains("musl")) {
+            return OperatingSystem.LINUX_MUSL;
+        }
+
+        // If we can't determine the libc type from the output
+        throw new UnsupportedOperationException(
+                "Cannot work out libc used by this OS. ldd output was: " + lowercaseOutput);
     }
 }

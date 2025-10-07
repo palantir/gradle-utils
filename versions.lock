@@ -2,11 +2,19 @@
 
 com.fasterxml.jackson.core:jackson-annotations:2.19.2 (1 constraints: 40054c3b)
 
+com.google.errorprone:error_prone_annotations:2.36.0 (2 constraints: 6c16e00b)
+
 com.gradle:develocity-gradle-plugin-adapters:1.2.1 (1 constraints: 0605f735)
+
+com.palantir.safe-logging:preconditions:3.9.0 (1 constraints: 0e051536)
+
+com.palantir.safe-logging:safe-logging:3.9.0 (1 constraints: 08113dc0)
 
 org.apache.commons:commons-lang3:3.19.0 (1 constraints: 3f05503b)
 
 org.immutables:value:2.11.4 (1 constraints: 3a05363b)
+
+org.jetbrains:annotations:26.0.2 (1 constraints: 36116fd1)
 
 
 
