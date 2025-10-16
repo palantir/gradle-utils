@@ -1,6 +1,6 @@
 # Run ./gradlew writeVersionsLocks to regenerate this file. Blank lines are to minimize merge conflicts.
 
-com.fasterxml.jackson.core:jackson-annotations:2.19.2 (1 constraints: 40054c3b)
+com.fasterxml.jackson.core:jackson-annotations:2.20 (1 constraints: d804f730)
 
 com.gradle:develocity-gradle-plugin-adapters:1.2.1 (1 constraints: 0605f735)
 
