@@ -33,7 +33,6 @@ public abstract class GradleExec {
     protected abstract ProviderFactory getProviderFactory();
 
     @Nested
-    @SuppressWarnings("JavaxInjectOnAbstractMethod")
     protected abstract Zipper getZip();
 
     /**
