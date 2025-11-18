@@ -5,7 +5,7 @@ org.apache.commons:commons-lang3 = 3.20.0
 org.junit.jupiter:* = 6.0.1
 org.assertj:assertj-core = 3.27.6
 com.netflix.nebula:nebula-test = 10.6.2
-org.immutables:* = 2.11.6
+org.immutables:* = 2.11.7
 
 # conflict resolution
 com.google.code.findbugs:jsr305 = 3.0.2
