@@ -1,6 +1,7 @@
 apply plugin: 'java-library'
 apply plugin: 'groovy'
 apply plugin: 'com.palantir.external-publish-jar'
+apply plugin: 'com.palantir.gradle-plugin-testing'
 
 dependencies {
     implementation gradleApi()
@@ -8,4 +9,7 @@ dependencies {
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'com.netflix.nebula:nebula-test'
+    testImplementation 'com.palantir.gradle.plugintesting:gradle-plugin-testing-junit'
+
+    gradlePluginForTesting 'com.palantir.gradle.consistentversions:gradle-consistent-versions:2.16.0'
 }
