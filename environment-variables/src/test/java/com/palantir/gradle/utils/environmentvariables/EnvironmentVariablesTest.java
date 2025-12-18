@@ -33,21 +33,19 @@ class EnvironmentVariablesTest {
 
     @BeforeEach
     void setup(RootProject rootProject) {
-        rootProject
-                .buildGradle()
-                .prepend(
-                        """
-                        buildscript {
-                            repositories {
-                                mavenLocal()
-                            }
-                            dependencies {
-                                classpath 'com.palantir.gradle.utils:environment-variables:%s'
-                            }
-                        }
-                        """,
-                        Optional.ofNullable(System.getProperty("projectVersion"))
-                                .orElseThrow());
+        String projectVersion =
+                Optional.ofNullable(System.getProperty("projectVersion")).orElseThrow();
+
+        rootProject.buildGradle().prepend("""
+            buildscript {
+                repositories {
+                    mavenLocal()
+                }
+                dependencies {
+                    classpath 'com.palantir.gradle.utils:environment-variables:%s'
+                }
+            }
+            """, projectVersion);
 
         rootProject.buildGradle().append("""
             import com.palantir.gradle.utils.environmentvariables.EnvironmentVariables
