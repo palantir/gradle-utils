@@ -12,10 +12,10 @@ dependencies {
     testImplementation 'com.palantir.gradle.plugintesting:gradle-plugin-testing-junit'
 }
 
-// Publish to maven local so that tests can directly import EnvironmentVariables
-tasks.test.dependsOn tasks.publishToMavenLocal
-
-tasks.withType(Test).configureEach {
+tasks.named('test', Test) {
     environment("VARIABLE", "actual value")
     systemProperty 'projectVersion', project.version
+
+    // Publish to maven local so that tests can directly import EnvironmentVariables
+    dependsOn tasks.publishToMavenLocal
 }
