@@ -24,6 +24,7 @@ import com.palantir.gradle.testing.junit.DisabledConfigurationCache;
 import com.palantir.gradle.testing.junit.GradlePluginTests;
 import com.palantir.gradle.testing.project.RootProject;
 import java.nio.file.Path;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -33,39 +34,50 @@ class CircleCiArtifactsTest {
 
     @BeforeEach
     void setup(RootProject rootProject) {
-        rootProject.buildGradle().append("""
-            import com.palantir.gradle.utils.circleciartifacts.CircleCiArtifacts
+        rootProject
+                .buildGradle()
+                .prepend(
+                        """
+                        buildscript {
+                            repositories {
+                                mavenLocal()
+                                mavenCentral()
+                            }
+                            dependencies {
+                                classpath 'com.palantir.gradle.utils:circleci-artifacts:%s'
+                            }
+                        }
 
-            public abstract class CircleCiArtifactsTask extends DefaultTask {
-              @Nested
-              abstract CircleCiArtifacts getCircleCiArtifacts();
-            }
+                        import com.palantir.gradle.utils.circleciartifacts.CircleCiArtifacts
 
-            tasks.register("printCircleCiLocation", CircleCiArtifactsTask) {
-                doLast { task ->
-                    def artifactLocation = task.circleCiArtifacts.resolveArtifactLocation('location/in/artifacts')
-                    if (artifactLocation.isPresent()) {
-                        println "Physical path: ${artifactLocation.get().physicalPath()}"
-                        println "External location: ${artifactLocation.get().externalLocation()}"
-                        println "Circle link: ${artifactLocation.get().circleLink()}"
-                    } else {
-                        println "Not in Circle, empty artifact location"
-                    }
-                }
-            }
-            """);
+                        public abstract class CircleCiArtifactsTask extends DefaultTask {
+                          @Nested
+                          abstract CircleCiArtifacts getCircleCiArtifacts();
+                        }
+
+                        tasks.register("printCircleCiLocation", CircleCiArtifactsTask) {
+                            doLast { task ->
+                                def artifactLocation = task.circleCiArtifacts.resolveArtifactLocation('location/in/artifacts')
+                                if (artifactLocation.isPresent()) {
+                                    println "Physical path: ${artifactLocation.get().physicalPath()}"
+                                    println "External location: ${artifactLocation.get().externalLocation()}"
+                                    println "Circle link: ${artifactLocation.get().circleLink()}"
+                                } else {
+                                    println "Not in Circle, empty artifact location"
+                                }
+                            }
+                        }
+                        """,
+                        Optional.ofNullable(System.getProperty("projectVersion"))
+                                .orElseThrow());
     }
 
     @Test
     void can_use_circle_ci_artifacts_when_the_right_environment_variables_are_set(
             GradleInvoker gradle, RootProject rootProject) {
-        Path fakeCircleArtifacts = rootProject
-                .directory("build/circle-artifacts")
-                .createDirectories()
-                .path()
-                .toAbsolutePath();
-        Path projectDir = rootProject.path().toAbsolutePath();
-        String relativePath = projectDir.relativize(fakeCircleArtifacts).toString();
+        Path fakeCircleArtifacts =
+                rootProject.directory("build/circle-artifacts").path();
+        String relativePath = rootProject.path().relativize(fakeCircleArtifacts).toString();
 
         rootProject
                 .gradlePropertiesFile()
