@@ -14,9 +14,9 @@ dependencies {
     gradlePluginForTesting 'com.palantir.gradle.consistentversions:gradle-consistent-versions'
 }
 
-// Publish to maven local so that tests can directly import DependencyGraphUtils
-tasks.test.dependsOn tasks.publishToMavenLocal
-
-test {
+tasks.named('test', Test) {
     systemProperty 'projectVersion', project.version
+
+    // Publish to maven local so that tests can directly import DependencyGraphUtils
+    dependsOn tasks.publishToMavenLocal
 }
