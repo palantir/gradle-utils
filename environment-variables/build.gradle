@@ -1,6 +1,7 @@
 apply plugin: 'java-library'
 apply plugin: 'com.palantir.external-publish-jar'
 apply plugin: 'groovy'
+apply plugin: 'com.palantir.gradle-plugin-testing'
 
 dependencies {
     implementation gradleApi()
@@ -10,6 +11,10 @@ dependencies {
     testImplementation 'com.netflix.nebula:nebula-test'
 }
 
-tasks.withType(Test).configureEach {
+tasks.named('test', Test) {
     environment("VARIABLE", "actual value")
+    systemProperty 'projectVersion', project.version
+
+    // Publish to maven local so that tests can directly import EnvironmentVariables
+    dependsOn tasks.publishToMavenLocal
 }

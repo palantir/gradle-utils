@@ -1,6 +1,7 @@
 apply plugin: 'java-library'
 apply plugin: 'com.palantir.external-publish-jar'
 apply plugin: 'groovy'
+apply plugin: 'com.palantir.gradle-plugin-testing'
 
 dependencies {
     implementation project(':environment-variables')
@@ -14,4 +15,14 @@ dependencies {
     testImplementation 'org.assertj:assertj-core'
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'com.netflix.nebula:nebula-test'
+}
+
+tasks.named('test', Test) {
+    systemProperty 'projectVersion', project.version
+
+    // Publish to maven local so that tests can directly import CircleCiArtifacts
+    // Need to publish all dependencies too (providers, environment-variables)
+    dependsOn tasks.publishToMavenLocal
+    dependsOn ':providers:publishToMavenLocal'
+    dependsOn ':environment-variables:publishToMavenLocal'
 }
