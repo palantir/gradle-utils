@@ -34,41 +34,39 @@ class CircleCiArtifactsTest {
 
     @BeforeEach
     void setup(RootProject rootProject) {
-        rootProject
-                .buildGradle()
-                .prepend(
-                        """
-                        buildscript {
-                            repositories {
-                                mavenLocal()
-                            }
-                            dependencies {
-                                classpath 'com.palantir.gradle.utils:circleci-artifacts:%s'
-                            }
-                        }
+        String projectVersion =
+                Optional.ofNullable(System.getProperty("projectVersion")).orElseThrow();
 
-                        import com.palantir.gradle.utils.circleciartifacts.CircleCiArtifacts
+        rootProject.buildGradle().prepend("""
+            buildscript {
+                repositories {
+                    mavenLocal()
+                }
+                dependencies {
+                    classpath 'com.palantir.gradle.utils:circleci-artifacts:%s'
+                }
+            }
 
-                        public abstract class CircleCiArtifactsTask extends DefaultTask {
-                          @Nested
-                          abstract CircleCiArtifacts getCircleCiArtifacts();
-                        }
+            import com.palantir.gradle.utils.circleciartifacts.CircleCiArtifacts
 
-                        tasks.register("printCircleCiLocation", CircleCiArtifactsTask) {
-                            doLast { task ->
-                                def artifactLocation = task.circleCiArtifacts.resolveArtifactLocation('location/in/artifacts')
-                                if (artifactLocation.isPresent()) {
-                                    println "Physical path: ${artifactLocation.get().physicalPath()}"
-                                    println "External location: ${artifactLocation.get().externalLocation()}"
-                                    println "Circle link: ${artifactLocation.get().circleLink()}"
-                                } else {
-                                    println "Not in Circle, empty artifact location"
-                                }
-                            }
-                        }
-                        """,
-                        Optional.ofNullable(System.getProperty("projectVersion"))
-                                .orElseThrow());
+            public abstract class CircleCiArtifactsTask extends DefaultTask {
+              @Nested
+              abstract CircleCiArtifacts getCircleCiArtifacts();
+            }
+
+            tasks.register("printCircleCiLocation", CircleCiArtifactsTask) {
+                doLast { task ->
+                    def artifactLocation = task.circleCiArtifacts.resolveArtifactLocation('location/in/artifacts')
+                    if (artifactLocation.isPresent()) {
+                        println "Physical path: ${artifactLocation.get().physicalPath()}"
+                        println "External location: ${artifactLocation.get().externalLocation()}"
+                        println "Circle link: ${artifactLocation.get().circleLink()}"
+                    } else {
+                        println "Not in Circle, empty artifact location"
+                    }
+                }
+            }
+            """, projectVersion);
     }
 
     @Test
