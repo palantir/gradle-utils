@@ -14,49 +14,56 @@
  * limitations under the License.
  */
 
-package com.palantir.gradle.utils.dependencygraph
+package com.palantir.gradle.utils.dependencygraph;
 
-import nebula.test.IntegrationSpec
+import static org.assertj.core.api.Assertions.assertThat;
 
-class DependencyGraphUtilsIntegrationSpec extends IntegrationSpec {
-    File subprojectDir
-    File subprojectBuildFile
+import com.palantir.gradle.testing.execution.GradleInvoker;
+import com.palantir.gradle.testing.junit.DisabledConfigurationCache;
+import com.palantir.gradle.testing.junit.GradlePluginTests;
+import com.palantir.gradle.testing.project.RootProject;
+import com.palantir.gradle.testing.project.SubProject;
+import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-    def setup() {
-        // language=Gradle
-        settingsFile << '''
-            rootProject.name = 'root'
-        '''.stripIndent(true)
+@GradlePluginTests
+@DisabledConfigurationCache
+class DependencyGraphUtilsIntegrationTest {
 
-        // language=Gradle
-        buildFile << '''
+    @BeforeEach
+    void setup(RootProject rootProject, SubProject subproject) {
+        String projectVersion =
+                Optional.ofNullable(System.getProperty("projectVersion")).orElseThrow();
+
+        rootProject.buildGradle().prepend("""
             buildscript {
                 repositories {
-                    mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+                    mavenLocal()
                 }
-            
+
                 dependencies {
-                    classpath 'com.palantir.gradle.consistentversions:gradle-consistent-versions:2.16.0'
+                    classpath 'com.palantir.gradle.utils:dependency-graph-utils:%s'
                 }
             }
-            
+
             allprojects {
                 repositories {
                     mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
                 }
-                
-                apply plugin: 'java-library'
             }
-        '''.stripIndent(true)
+            """, projectVersion);
 
-        // language=Gradle
-        subprojectDir = addSubproject 'subproject', '''
+        rootProject.buildGradle().plugins().add("java-library");
+        subproject.buildGradle().plugins().add("java-library");
+
+        subproject.buildGradle().append("""
             import com.palantir.gradle.utils.dependencygraph.DependencyGraphUtils
 
             task printAllDeps {
                 inputs.property('configurationName', 'runtimeClasspath')
                 outputs.file('build/allDeps')
-            
+
                 doFirst {
                     def root = project.configurations.getByName(inputs.properties.get('configurationName'))
                             .incoming.resolutionResult.rootComponent.get()
@@ -64,37 +71,51 @@ class DependencyGraphUtilsIntegrationSpec extends IntegrationSpec {
                     outputs.files.singleFile << all.collect { it.toString() }.sort().join('\\n')
                 }
             }
-        '''.stripIndent(true)
+            """);
 
-        subprojectBuildFile = new File(subprojectDir, 'build.gradle')
+        rootProject.mainSourceSet().java().writeClass("""
+            package hello;
 
-        writeHelloWorld()
-        writeHelloWorld(subprojectDir)
+            public class HelloWorld {
+                public static void main(String[] args) {
+                    System.out.println("Hello Integration Test");
+                }
+            }
+            """);
 
-        file('versions.props') << '''
-        com.google.guava:guava = 30.1.1-jre
-        com.palantir.conjure.java:* = 7.21.0
-        '''.stripIndent(true)
+        subproject.mainSourceSet().java().writeClass("""
+            package hello;
 
-        file('versions.lock')
+            public class HelloWorld {
+                public static void main(String[] args) {
+                    System.out.println("Hello Integration Test");
+                }
+            }
+            """);
+
+        rootProject
+                .propertiesFile("versions.props")
+                .appendProperty("com.google.guava:guava", "30.1.1-jre")
+                .appendProperty("com.palantir.conjure.java:*", "7.21.0");
+
+        rootProject.file("versions.lock").createEmpty();
     }
 
-    def 'prints all deps successfully without GCV, with a dep on root project'() {
-        // language=Gradle
-        subprojectBuildFile << '''
+    @Test
+    void prints_all_deps_successfully_without_gcv_with_a_dep_on_root_project(
+            GradleInvoker gradle, SubProject subproject) {
+        subproject.buildGradle().append("""
             dependencies {
                 implementation 'com.palantir.conjure.java:conjure-java-core:7.21.0'
                 implementation rootProject
             }
-        '''.stripIndent(true)
+            """);
 
-        when:
-        runTasksSuccessfully('printAllDeps')
+        gradle.withArgs("printAllDeps").buildsSuccessfully();
 
-        then:
-        def allDeps = new File(subprojectDir, 'build/allDeps').text.strip()
+        String allDeps = subproject.buildDir().file("allDeps").text().strip();
 
-        def expected = '''
+        String expected = """
             com.atlassian.commonmark:commonmark:0.12.1
             com.fasterxml.jackson.core:jackson-annotations:2.15.3
             com.fasterxml.jackson.core:jackson-core:2.15.3
@@ -146,32 +167,29 @@ class DependencyGraphUtilsIntegrationSpec extends IntegrationSpec {
             org.yaml:snakeyaml:2.1
             project :
             project :subproject
-        '''.stripIndent(true).strip()
+            """.strip();
 
-        allDeps == expected
+        assertThat(allDeps).isEqualTo(expected);
     }
 
-    def 'prints all deps successfully with GCV, not including dep on root project via GCV'() {
-        System.setProperty('ignoreDeprecations', 'true')
-        // language=Gradle
-        buildFile << '''
-            apply plugin: 'com.palantir.consistent-versions'
-        '''.stripIndent(true)
+    @Test
+    void prints_all_deps_successfully_with_gcv_not_including_dep_on_root_project_via_gcv(
+            GradleInvoker gradle, RootProject rootProject, SubProject subproject) {
+        System.setProperty("ignoreDeprecations", "true");
 
-        // language=Gradle
-        subprojectBuildFile << '''
+        rootProject.buildGradle().plugins().add("com.palantir.consistent-versions");
+
+        subproject.buildGradle().append("""
             dependencies {
                 implementation 'com.palantir.conjure.java:conjure-java-core:7.21.0'
             }
-        '''.stripIndent(true)
+            """);
 
-        when:
-        runTasksSuccessfully('printAllDeps')
+        gradle.withArgs("printAllDeps").buildsSuccessfully();
 
-        then:
-        def allDeps = new File(subprojectDir, 'build/allDeps').text.strip()
+        String allDeps = subproject.buildDir().file("allDeps").text().strip();
 
-        def expected = '''
+        String expected = """
             com.atlassian.commonmark:commonmark:0.12.1
             com.fasterxml.jackson.core:jackson-annotations:2.15.3
             com.fasterxml.jackson.core:jackson-core:2.15.3
@@ -222,29 +240,28 @@ class DependencyGraphUtilsIntegrationSpec extends IntegrationSpec {
             org.wildfly.common:wildfly-common:1.6.0.Final
             org.yaml:snakeyaml:2.1
             project :subproject
-        '''.stripIndent(true).strip()
+            """.strip();
 
-        allDeps == expected
+        assertThat(allDeps).isEqualTo(expected);
     }
 
-    def 'when there is no GCV platform, or any variant on the root, the root is still selected'() {
-        // language=Gradle
-        subprojectBuildFile << '''
+    @Test
+    void when_there_is_no_gcv_platform_or_any_variant_on_the_root_the_root_is_still_selected(
+            GradleInvoker gradle, SubProject subproject) {
+        subproject.buildGradle().append("""
             def runtimeClasspathCopy = configurations.runtimeClasspath.copy()
 
             printAllDeps.inputs.property('configuration', runtimeClasspathCopy.name)
-        '''.stripIndent(true)
+            """);
 
-        when:
-        runTasksSuccessfully('printAllDeps')
+        gradle.withArgs("printAllDeps").buildsSuccessfully();
 
-        then:
-        def allDeps = new File(subprojectDir, 'build/allDeps').text.strip()
+        String allDeps = subproject.buildDir().file("allDeps").text().strip();
 
-        def expected = '''
+        String expected = """
             project :subproject
-        '''.stripIndent(true).strip()
+            """.strip();
 
-        allDeps == expected
+        assertThat(allDeps).isEqualTo(expected);
     }
 }
