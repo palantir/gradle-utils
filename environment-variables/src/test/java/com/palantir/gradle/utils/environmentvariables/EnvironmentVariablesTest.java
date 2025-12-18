@@ -23,6 +23,7 @@ import com.palantir.gradle.testing.execution.InvocationResult;
 import com.palantir.gradle.testing.junit.DisabledConfigurationCache;
 import com.palantir.gradle.testing.junit.GradlePluginTests;
 import com.palantir.gradle.testing.project.RootProject;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,18 +33,21 @@ class EnvironmentVariablesTest {
 
     @BeforeEach
     void setup(RootProject rootProject) {
-        // Add the compiled classes to the buildscript classpath so EnvironmentVariables is available
-        String projectRoot = System.getProperty("user.dir");
-        String classesDir = projectRoot + "/build/classes/java/main";
-        String resourcesDir = projectRoot + "/build/resources/main";
-
-        rootProject.buildGradle().prepend("""
-            buildscript {
-                dependencies {
-                    classpath files('%s', '%s')
-                }
-            }
-            """, classesDir, resourcesDir);
+        rootProject
+                .buildGradle()
+                .prepend(
+                        """
+                        buildscript {
+                            repositories {
+                                mavenLocal()
+                            }
+                            dependencies {
+                                classpath 'com.palantir.gradle.utils:environment-variables:%s'
+                            }
+                        }
+                        """,
+                        Optional.ofNullable(System.getProperty("projectVersion"))
+                                .orElseThrow());
 
         rootProject.buildGradle().append("""
             import com.palantir.gradle.utils.environmentvariables.EnvironmentVariables
