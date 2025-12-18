@@ -11,5 +11,12 @@ dependencies {
     testImplementation 'com.netflix.nebula:nebula-test'
     testImplementation 'com.palantir.gradle.plugintesting:gradle-plugin-testing-junit'
 
-    gradlePluginForTesting 'com.palantir.gradle.consistentversions:gradle-consistent-versions:2.16.0'
+    gradlePluginForTesting 'com.palantir.gradle.consistentversions:gradle-consistent-versions'
+}
+
+// Publish to maven local so that tests can directly import DependencyGraphUtils
+tasks.test.dependsOn tasks.publishToMavenLocal
+
+test {
+    systemProperty 'projectVersion', project.version
 }

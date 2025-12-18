@@ -14,3 +14,6 @@ com.google.errorprone:error_prone_annotations = 2.11.0
 org.checkerframework:checker-qual = 3.52.1
 com.gradle:develocity-gradle-plugin-adapters = 1.2.1
 org.junit.platform:* = 6.0.1
+
+# Testing
+com.palantir.gradle.consistentversions:gradle-consistent-versions = 3.7.0

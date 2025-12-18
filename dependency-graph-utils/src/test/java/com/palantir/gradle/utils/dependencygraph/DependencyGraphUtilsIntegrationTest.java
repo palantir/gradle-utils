@@ -23,6 +23,7 @@ import com.palantir.gradle.testing.junit.DisabledConfigurationCache;
 import com.palantir.gradle.testing.junit.GradlePluginTests;
 import com.palantir.gradle.testing.project.RootProject;
 import com.palantir.gradle.testing.project.SubProject;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -32,14 +33,17 @@ class DependencyGraphUtilsIntegrationTest {
 
     @BeforeEach
     void setup(RootProject rootProject, SubProject subproject) {
-        rootProject.buildGradle().append("""
+        String projectVersion =
+                Optional.ofNullable(System.getProperty("projectVersion")).orElseThrow();
+
+        rootProject.buildGradle().prepend("""
             buildscript {
                 repositories {
-                    mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
+                    mavenLocal()
                 }
 
                 dependencies {
-                    classpath 'com.palantir.gradle.consistentversions:gradle-consistent-versions:2.16.0'
+                    classpath 'com.palantir.gradle.utils:dependency-graph-utils:%s'
                 }
             }
 
@@ -48,7 +52,7 @@ class DependencyGraphUtilsIntegrationTest {
                     mavenCentral() { metadataSources { mavenPom(); ignoreGradleMetadataRedirection() } }
                 }
             }
-            """);
+            """, projectVersion);
 
         rootProject.buildGradle().plugins().add("java-library");
         subproject.buildGradle().plugins().add("java-library");
