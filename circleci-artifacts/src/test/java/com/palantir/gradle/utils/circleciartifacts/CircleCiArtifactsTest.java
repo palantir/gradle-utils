@@ -41,7 +41,6 @@ class CircleCiArtifactsTest {
                         buildscript {
                             repositories {
                                 mavenLocal()
-                                mavenCentral()
                             }
                             dependencies {
                                 classpath 'com.palantir.gradle.utils:circleci-artifacts:%s'
