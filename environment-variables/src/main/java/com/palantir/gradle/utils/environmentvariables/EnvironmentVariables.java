@@ -36,13 +36,15 @@ public abstract class EnvironmentVariables {
                 .orElse(true);
     }
 
-    public final Provider<String> envVarOrFromTestingProperty(String envVar) {
-        Provider<Boolean> testingProvider = getProviderFactory()
+    public final Provider<Boolean> isInTestMode() {
+        return getProviderFactory()
                 .gradleProperty("__TESTING")
                 .map(Boolean::parseBoolean)
                 .orElse(false);
+    }
 
-        return testingProvider.flatMap(isTesting ->
+    public final Provider<String> envVarOrFromTestingProperty(String envVar) {
+        return isInTestMode().flatMap(isTesting ->
                 isTesting ? testingProperty(envVar) : getProviderFactory().environmentVariable(envVar));
     }
 
