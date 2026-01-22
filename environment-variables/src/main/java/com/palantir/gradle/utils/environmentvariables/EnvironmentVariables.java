@@ -44,8 +44,10 @@ public abstract class EnvironmentVariables {
     }
 
     public final Provider<String> envVarOrFromTestingProperty(String envVar) {
-        return isInTestMode().flatMap(isTesting ->
-                isTesting ? testingProperty(envVar) : getProviderFactory().environmentVariable(envVar));
+        return isInTestMode()
+                .flatMap(isTesting -> isTesting
+                        ? testingProperty(envVar)
+                        : getProviderFactory().environmentVariable(envVar));
     }
 
     private Provider<String> testingProperty(String name) {
