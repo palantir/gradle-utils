@@ -48,6 +48,7 @@ public enum OperatingSystem {
         return UiNames.uiName(this);
     }
 
+    @SuppressWarnings("for-rollout:PreferSafeLoggableExceptions")
     public Optional<String> glibcOrMuslDistribution() {
         switch (this) {
             case LINUX_MUSL:
