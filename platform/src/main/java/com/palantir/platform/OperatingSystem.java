@@ -49,11 +49,17 @@ public enum OperatingSystem {
     }
 
     public Optional<String> glibcOrMuslDistribution() {
-        return switch (this) {
-            case LINUX_MUSL -> Optional.of("musl");
-            case LINUX_GLIBC -> Optional.of("glibc");
-            case MACOS, WINDOWS -> Optional.empty();
-        };
+        switch (this) {
+            case LINUX_MUSL:
+                return Optional.of("musl");
+            case LINUX_GLIBC:
+                return Optional.of("glibc");
+            case MACOS:
+            case WINDOWS:
+                return Optional.empty();
+            default:
+                throw new IllegalArgumentException();
+        }
     }
 
     public static Optional<OperatingSystem> fromString(String osUiName) {
