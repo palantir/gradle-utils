@@ -38,7 +38,7 @@ com.google.j2objc:j2objc-annotations:3.1 (1 constraints: b809f1a0)
 
 com.netflix.nebula:nebula-test:10.6.2 (2 constraints: d61de72d)
 
-com.palantir.gradle.consistentversions:gradle-consistent-versions:3.10.0 (1 constraints: 3605353b)
+com.palantir.gradle.consistentversions:gradle-consistent-versions:3.11.0 (1 constraints: 3705383b)
 
 com.palantir.gradle.failure-reports:gradle-failure-reports-exceptions:1.2.0 (1 constraints: b71b1c46)
 
