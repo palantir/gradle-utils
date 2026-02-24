@@ -26,7 +26,7 @@ com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.21.1 (1 constraints: a51a
 
 com.fasterxml.woodstox:woodstox-core:7.1.1 (1 constraints: 3d174926)
 
-com.google.errorprone:error_prone_annotations:2.41.0 (2 constraints: 7e0f1fa1)
+com.google.errorprone:error_prone_annotations:2.47.0 (2 constraints: 870f5da2)
 
 com.google.guava:failureaccess:1.0.3 (1 constraints: 160ae3b4)
 
