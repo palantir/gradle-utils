@@ -26,7 +26,6 @@ import org.junit.jupiter.api.io.TempDir;
 
 class SafeExecCommandLineTest {
 
-    // Sample values for `os.name` as produced by the JVM on each platform.
     private static final String LINUX = "Linux";
     private static final String WINDOWS = "Windows 11";
     private static final String MACOS = "Mac OS X";
