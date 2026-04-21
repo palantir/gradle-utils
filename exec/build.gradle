@@ -20,6 +20,7 @@ apply plugin: 'com.palantir.external-publish-jar'
 dependencies {
     implementation gradleApi()
     api project(':providers')
+    implementation project(':safe-exec-commandline')
 
     annotationProcessor 'org.immutables:value'
 

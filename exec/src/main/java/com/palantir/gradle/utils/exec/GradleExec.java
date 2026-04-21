@@ -16,6 +16,7 @@
 package com.palantir.gradle.utils.exec;
 
 import com.palantir.gradle.utils.providers.Zipper;
+import com.palantir.gradle.utils.safeexeccommandline.SafeExecCommandLine;
 import javax.inject.Inject;
 import org.gradle.api.Action;
 import org.gradle.api.provider.Provider;
@@ -51,6 +52,7 @@ public abstract class GradleExec {
     public Provider<ExecResultWithOutput> exec(Action<? super ExecSpec> action) {
         Action<ExecSpec> wrappedAction = spec -> {
             action.execute(spec);
+            spec.setCommandLine(SafeExecCommandLine.resolve(spec.getCommandLine()));
             spec.setIgnoreExitValue(true);
         };
 
