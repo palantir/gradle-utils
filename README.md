@@ -102,6 +102,30 @@ public abstract class MyTaskOrExtension {
 }
 ```
 
+## `SafeExecCommandLine`
+
+Workaround for [gradle/gradle#10483](https://github.com/gradle/gradle/issues/10483) — on macOS with a JDK 21+ Gradle daemon, executables installed at custom paths (e.g. `docker` in `/usr/local/bin`) sometimes cannot be resolved, particularly when IntelliJ was launched via Launchpad and hands the daemon a minimal `PATH`. See also [this comment](https://github.com/gradle/gradle/issues/10483#issuecomment-2507620705) for more context.
+
+On macOS, if the first command-line argument is not a relative or absolute path, `SafeExecCommandLine.resolve(...)` looks it up in the `PATH` environment variable. If a matching executable is found, the first argument is replaced with its full path; otherwise the original list is returned unchanged. On non-macOS hosts the input is always returned as-is.
+
+`GradleExec` applies this automatically to every `exec(...)` call, so most users don't need to call it directly.
+
+### Dependency
+
+```
+implementation 'com.palantir.gradle.utils:safe-exec-commandline:<version>'
+```
+
+### Example Usage
+
+```java
+import com.palantir.gradle.utils.safeexeccommandline.SafeExecCommandLine;
+
+List<String> safe = SafeExecCommandLine.resolve(List.of("docker", "--version"));
+// On macOS with docker on PATH: ["/usr/local/bin/docker", "--version"]
+// On Linux/Windows, or when docker isn't found: ["docker", "--version"]
+```
+
 ## `Zipper`
 
 A utility class for combining ("zipping") multiple Gradle `Provider` instances into a single provider whose value is computed from the values of the input providers.

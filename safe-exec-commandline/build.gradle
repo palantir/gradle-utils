@@ -1,0 +1,14 @@
+apply plugin: 'java-library'
+apply plugin: 'com.palantir.external-publish-jar'
+
+dependencies {
+    compileOnly 'com.google.guava:guava'
+    compileOnly 'org.jspecify:jspecify'
+
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+javaVersion {
+    target = 11
+}
