@@ -42,10 +42,10 @@ class SafeExecCommandLineTest {
 
         assertThat(SafeExecCommandLine.resolve(input, LINUX, pathDir.toString()))
                 .as("the workaround is macOS-only; Linux should be untouched even when the command exists on PATH")
-                .isEqualTo(input);
+                .containsExactlyElementsOf(input);
         assertThat(SafeExecCommandLine.resolve(input, WINDOWS, pathDir.toString()))
                 .as("the workaround is macOS-only; Windows should be untouched even when the command exists on PATH")
-                .isEqualTo(input);
+                .containsExactlyElementsOf(input);
     }
 
     @Test
@@ -54,7 +54,7 @@ class SafeExecCommandLineTest {
 
         assertThat(SafeExecCommandLine.resolve(input, null, "/usr/local/bin"))
                 .as("null os.name can't be proven to be macOS, so we must not modify the command")
-                .isEqualTo(input);
+                .containsExactlyElementsOf(input);
     }
 
     @Test
@@ -113,7 +113,7 @@ class SafeExecCommandLineTest {
         assertThat(SafeExecCommandLine.resolve(input, MACOS, pathDir.toString()))
                 .as("if we can't find the executable on PATH we fall through to the original command so Gradle's own"
                         + " lookup has a chance to run")
-                .isEqualTo(input);
+                .containsExactlyElementsOf(input);
     }
 
     @Test
@@ -122,10 +122,10 @@ class SafeExecCommandLineTest {
 
         assertThat(SafeExecCommandLine.resolve(input, MACOS, null))
                 .as("with no PATH we have nowhere to search, so the caller's command passes through unchanged")
-                .isEqualTo(input);
+                .containsExactlyElementsOf(input);
         assertThat(SafeExecCommandLine.resolve(input, MACOS, ""))
                 .as("with an empty PATH we have nowhere to search, so the caller's command passes through unchanged")
-                .isEqualTo(input);
+                .containsExactlyElementsOf(input);
     }
 
     @Test
