@@ -163,8 +163,8 @@ class DependencyGraphUtilsIntegrationTest {
             org.wildfly.client:wildfly-client-config:1.0.1.Final
             org.wildfly.common:wildfly-common:1.6.0.Final
             org.yaml:snakeyaml:2.1
-            project :
             project :subproject
+            root project :
             """.strip();
 
         assertThat(allDeps).isEqualTo(expected);
