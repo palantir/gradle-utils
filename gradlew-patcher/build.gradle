@@ -1,0 +1,17 @@
+apply plugin: 'java-library'
+apply plugin: 'com.palantir.external-publish-jar'
+apply plugin: 'com.palantir.gradle-plugin-testing'
+
+dependencies {
+    annotationProcessor 'org.immutables:value'
+    compileOnly gradleApi()
+    compileOnly 'org.immutables:value::annotations'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.assertj:assertj-core'
+}
+
+tasks.named('test', Test) {
+    systemProperty 'projectVersion', project.version
+    dependsOn 'publishToMavenLocal'
+}
