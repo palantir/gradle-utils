@@ -1,5 +1,17 @@
 /*
  * (c) Copyright 2026 Palantir Technologies Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package com.palantir.gradle.utils.gradlewpatcher;
@@ -19,9 +31,9 @@ import java.util.stream.Stream;
  * Utility for managing marker-delimited patch blocks in shell scripts.
  * Patch blocks are identified by a header and footer comment line.
  */
-public final class WrapperPatchHelper {
+final class WrapperPatchHelper {
 
-    public static List<String> readAllLines(Path filePath) {
+    static List<String> readAllLines(Path filePath) {
         try {
             Stream<String> maybeExtraLine = Files.readString(filePath).endsWith("\n") ? Stream.of("") : Stream.empty();
             return Stream.concat(Files.readAllLines(filePath).stream(), maybeExtraLine)
@@ -31,7 +43,7 @@ public final class WrapperPatchHelper {
         }
     }
 
-    public static List<String> getLinesWithoutPatch(List<String> initialLines, String patchHeader, String patchFooter) {
+    static List<String> getLinesWithoutPatch(List<String> initialLines, String patchHeader, String patchFooter) {
         Optional<PatchLineNumbers> patchLineRange = getPatchLineNumbers(initialLines, patchHeader, patchFooter);
         if (patchLineRange.isEmpty()) {
             return new ArrayList<>(initialLines);
@@ -45,7 +57,7 @@ public final class WrapperPatchHelper {
         return linesNoPatch;
     }
 
-    public static void writeContentWithPatch(
+    static void writeContentWithPatch(
             Path outputPath, List<String> initialLines, List<String> patchLines, int insertIndex) {
         try {
             Files.writeString(outputPath, getContentWithPatch(initialLines, patchLines, insertIndex));
@@ -54,7 +66,7 @@ public final class WrapperPatchHelper {
         }
     }
 
-    public static Optional<PatchLineNumbers> getPatchLineNumbers(
+    static Optional<PatchLineNumbers> getPatchLineNumbers(
             List<String> content, String patchHeader, String patchFooter) {
         List<Integer> startPatchIndexes = IntStream.range(0, content.size())
                 .filter(i -> content.get(i).endsWith(patchHeader))
@@ -63,9 +75,9 @@ public final class WrapperPatchHelper {
                 .toList();
 
         if (startPatchIndexes.size() > 1) {
-            throw new IllegalArgumentException(
-                    String.format("Invalid patch, expected at most 1 header '%s', but got %s", patchHeader,
-                            startPatchIndexes.size()));
+            throw new IllegalArgumentException(String.format(
+                    "Invalid patch, expected at most 1 header '%s', but got %s",
+                    patchHeader, startPatchIndexes.size()));
         }
 
         if (startPatchIndexes.isEmpty()) {
@@ -81,15 +93,13 @@ public final class WrapperPatchHelper {
                 .toList();
 
         if (endPatchIndexes.size() > 1) {
-            throw new IllegalArgumentException(
-                    String.format("Invalid patch, expected at most 1 footer '%s', but got %s", patchFooter,
-                            endPatchIndexes.size()));
+            throw new IllegalArgumentException(String.format(
+                    "Invalid patch, expected at most 1 footer '%s', but got %s", patchFooter, endPatchIndexes.size()));
         }
 
         if (endPatchIndexes.isEmpty()) {
-            throw new IllegalStateException(
-                    String.format("Invalid patch, found header '%s' but missing closing footer '%s'", patchHeader,
-                            patchFooter));
+            throw new IllegalStateException(String.format(
+                    "Invalid patch, found header '%s' but missing closing footer '%s'", patchHeader, patchFooter));
         }
 
         return Optional.of(new PatchLineNumbers(startIndex, endPatchIndexes.get(0)));
