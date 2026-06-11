@@ -77,6 +77,7 @@ public abstract class WrapperPatcherTask extends DefaultTask {
     @TaskAction
     public final void action() {
         if (getGenerate().get()) {
+            log.lifecycle("Patching the gradle wrapper files.");
             patchGradlewContent();
         } else {
             checkContainsPatch();
@@ -114,11 +115,8 @@ public abstract class WrapperPatcherTask extends DefaultTask {
     }
 
     /**
-     * Determines where to insert the patch block. Priority:
-     * <ol>
-     *   <li>After the {@code ###} explanation comment block</li>
-     *   <li>After the shebang line</li>
-     * </ol>
+     * gradlew contains a comment block that explains how it works. We are trying to add the patch block after it.
+     * The fallback is adding the patch block directly after the shebang line.
      */
     private int getInsertLineIndex(List<String> lines) {
         List<Integer> explanationBlock = IntStream.range(0, lines.size())

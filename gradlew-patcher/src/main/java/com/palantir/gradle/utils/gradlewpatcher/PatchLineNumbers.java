@@ -16,4 +16,4 @@
 
 package com.palantir.gradle.utils.gradlewpatcher;
 
-public record PatchLineNumbers(int startIndex, int endIndex) {}
+record PatchLineNumbers(int startIndex, int endIndex) {}

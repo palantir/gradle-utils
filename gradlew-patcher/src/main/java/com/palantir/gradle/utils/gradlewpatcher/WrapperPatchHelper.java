@@ -33,16 +33,6 @@ import java.util.stream.Stream;
  */
 final class WrapperPatchHelper {
 
-    static List<String> readAllLines(Path filePath) {
-        try {
-            Stream<String> maybeExtraLine = Files.readString(filePath).endsWith("\n") ? Stream.of("") : Stream.empty();
-            return Stream.concat(Files.readAllLines(filePath).stream(), maybeExtraLine)
-                    .toList();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Unable to read file: " + filePath, e);
-        }
-    }
-
     static List<String> getLinesWithoutPatch(List<String> initialLines, String patchHeader, String patchFooter) {
         Optional<PatchLineNumbers> patchLineRange = getPatchLineNumbers(initialLines, patchHeader, patchFooter);
         if (patchLineRange.isEmpty()) {
@@ -57,6 +47,16 @@ final class WrapperPatchHelper {
         return linesNoPatch;
     }
 
+    static List<String> readAllLines(Path filePath) {
+        try {
+            Stream<String> maybeExtraLine = Files.readString(filePath).endsWith("\n") ? Stream.of("") : Stream.empty();
+            return Stream.concat(Files.readAllLines(filePath).stream(), maybeExtraLine)
+                    .toList();
+        } catch (IOException e) {
+            throw new UncheckedIOException("Unable to read file: " + filePath, e);
+        }
+    }
+
     static void writeContentWithPatch(
             Path outputPath, List<String> initialLines, List<String> patchLines, int insertIndex) {
         try {
@@ -64,6 +64,14 @@ final class WrapperPatchHelper {
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to write file: " + outputPath, e);
         }
+    }
+
+    private static String getContentWithPatch(List<String> initialLines, List<String> patchLines, int insertIndex) {
+        List<String> newLines = new ArrayList<>(initialLines.size() + patchLines.size());
+        newLines.addAll(initialLines.subList(0, insertIndex));
+        newLines.addAll(patchLines);
+        newLines.addAll(initialLines.subList(insertIndex, initialLines.size()));
+        return newLines.stream().collect(Collectors.joining(System.lineSeparator()));
     }
 
     static Optional<PatchLineNumbers> getPatchLineNumbers(
@@ -103,14 +111,6 @@ final class WrapperPatchHelper {
         }
 
         return Optional.of(new PatchLineNumbers(startIndex, endPatchIndexes.get(0)));
-    }
-
-    private static String getContentWithPatch(List<String> initialLines, List<String> patchLines, int insertIndex) {
-        List<String> newLines = new ArrayList<>(initialLines.size() + patchLines.size());
-        newLines.addAll(initialLines.subList(0, insertIndex));
-        newLines.addAll(patchLines);
-        newLines.addAll(initialLines.subList(insertIndex, initialLines.size()));
-        return newLines.stream().collect(Collectors.joining(System.lineSeparator()));
     }
 
     private WrapperPatchHelper() {}

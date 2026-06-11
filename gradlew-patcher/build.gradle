@@ -12,9 +12,9 @@ dependencies {
 }
 
 tasks.named('test', Test) {
-    def jarFile = tasks.named('jar').flatMap { it.archiveFile }
-    inputs.file(jarFile)
+    def classpath = sourceSets.main.runtimeClasspath
+    inputs.files(classpath)
     doFirst {
-        systemProperty 'jarPath', jarFile.get().asFile.absolutePath
+        systemProperty 'classpath', classpath.asPath
     }
 }

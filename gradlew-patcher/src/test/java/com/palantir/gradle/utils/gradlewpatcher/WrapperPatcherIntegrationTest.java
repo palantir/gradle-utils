@@ -22,7 +22,9 @@ import com.palantir.gradle.testing.execution.GradleInvoker;
 import com.palantir.gradle.testing.execution.InvocationResult;
 import com.palantir.gradle.testing.junit.GradlePluginTests;
 import com.palantir.gradle.testing.project.RootProject;
-import java.util.Optional;
+import java.io.File;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -34,16 +36,17 @@ class WrapperPatcherIntegrationTest {
 
     @BeforeEach
     void setup(RootProject rootProject) {
-        String jarPath = Optional.ofNullable(System.getProperty("jarPath"))
-                .orElseThrow(() -> new RuntimeException("expected jarPath to be set"));
+        String classpathFiles = Arrays.stream(System.getProperty("classpath").split(File.pathSeparator))
+                .map(path -> "'" + path + "'")
+                .collect(Collectors.joining(", "));
 
         rootProject.buildGradle().prepend("""
             buildscript {
                 dependencies {
-                    classpath files('%s')
+                    classpath files(%s)
                 }
             }
-            """, jarPath);
+            """, classpathFiles);
 
         rootProject.buildGradle().append("""
             import com.palantir.gradle.utils.gradlewpatcher.ImmutableWrapperPatchConfig
@@ -100,6 +103,12 @@ class WrapperPatcherIntegrationTest {
                 .edit(content -> content.replaceAll("(?s)" + PATCH_HEADER + ".*?" + PATCH_FOOTER + "\\n", ""));
 
         InvocationResult result = gradle.withArgs("checkTestWrapper").buildsWithFailure();
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .doesNotContain(PATCH_HEADER)
+                .doesNotContain(PATCH_FOOTER);
         assertThat(result).output().contains("Gradle Wrapper script is out of date");
     }
 }
