@@ -12,6 +12,9 @@ dependencies {
 }
 
 tasks.named('test', Test) {
-    systemProperty 'projectVersion', project.version
-    dependsOn 'publishToMavenLocal'
+    def jarFile = tasks.named('jar').flatMap { it.archiveFile }
+    inputs.file(jarFile)
+    doFirst {
+        systemProperty 'jarPath', jarFile.get().asFile.absolutePath
+    }
 }

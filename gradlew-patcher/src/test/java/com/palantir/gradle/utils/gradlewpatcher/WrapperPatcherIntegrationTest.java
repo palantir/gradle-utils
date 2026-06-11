@@ -22,19 +22,16 @@ class WrapperPatcherIntegrationTest {
 
     @BeforeEach
     void setup(RootProject rootProject) {
-        String projectVersion =
-                Optional.ofNullable(System.getProperty("projectVersion")).orElseThrow();
+        String jarPath = Optional.ofNullable(System.getProperty("jarPath"))
+                .orElseThrow(() -> new RuntimeException("expected jarPath to be set"));
 
         rootProject.buildGradle().prepend("""
             buildscript {
-                repositories {
-                    mavenLocal()
-                }
                 dependencies {
-                    classpath 'com.palantir.gradle.utils:gradlew-patcher:%s'
+                    classpath files('%s')
                 }
             }
-            """, projectVersion);
+            """, jarPath);
 
         rootProject.buildGradle().append("""
             import com.palantir.gradle.utils.gradlewpatcher.ImmutableWrapperPatchConfig
