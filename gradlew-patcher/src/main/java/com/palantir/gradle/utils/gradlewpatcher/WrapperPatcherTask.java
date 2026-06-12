@@ -24,10 +24,10 @@ import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.provider.Property;
+import org.gradle.api.services.ServiceReference;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
 import org.gradle.api.tasks.Internal;
-import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
 /**
@@ -54,11 +54,14 @@ public abstract class WrapperPatcherTask extends DefaultTask {
     @InputFile
     public abstract RegularFileProperty getOriginalGradlewScript();
 
-    @OutputFile
+    @Internal
     public abstract RegularFileProperty getPatchedGradlewScript();
 
     @Internal
     public abstract RegularFileProperty getBuildDir();
+
+    @ServiceReference("gradlewPatchLock")
+    abstract Property<GradlewPatchLockService> getGradlewPatchLock();
 
     @Input
     public abstract Property<String> getPatchTaskName();
@@ -79,7 +82,8 @@ public abstract class WrapperPatcherTask extends DefaultTask {
 
     private void checkContainsPatch() {
         List<String> scriptPatchLines = getPatchedLines();
-        List<String> expectedPatchLines = getPatchContent().get().lines().toList();
+        List<String> expectedPatchLines = WrapperPatchHelper.getPatchLinesWithHeader(
+                getPatchContent().get(), getPatchName().get());
         if (!scriptPatchLines.equals(expectedPatchLines)) {
             throw new IllegalStateException("Gradle Wrapper script is out of date, please run `./gradlew "
                     + getPatchTaskName().get() + "` to fix.");
@@ -91,7 +95,8 @@ public abstract class WrapperPatcherTask extends DefaultTask {
         List<String> initialLines = WrapperPatchHelper.readAllLines(originalGradlewScript.toPath());
         List<String> linesNoPatch = WrapperPatchHelper.getLinesWithoutPatch(
                 initialLines, getPatchName().get());
-        List<String> patchLines = getPatchContent().get().lines().toList();
+        List<String> patchLines = WrapperPatchHelper.getPatchLinesWithHeader(
+                getPatchContent().get(), getPatchName().get());
         int insertIndex = getInsertLineIndex(linesNoPatch);
         WrapperPatchHelper.writeContentWithPatch(
                 getPatchedGradlewScript().getAsFile().get().toPath(), linesNoPatch, patchLines, insertIndex);
@@ -102,6 +107,7 @@ public abstract class WrapperPatcherTask extends DefaultTask {
         List<String> initialLines = WrapperPatchHelper.readAllLines(gradlewFile.toPath());
         return WrapperPatchHelper.getPatchedLines(initialLines, getPatchName().get());
     }
+
     /**
      * gradlew contains a comment block that explains how it works. We are trying to add the patch block after it.
      * The fallback is adding the patch block directly after the shebang line.

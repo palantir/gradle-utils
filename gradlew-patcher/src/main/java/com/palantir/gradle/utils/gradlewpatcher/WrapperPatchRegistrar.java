@@ -17,6 +17,7 @@
 package com.palantir.gradle.utils.gradlewpatcher;
 
 import org.gradle.api.Project;
+import org.gradle.api.services.BuildServiceRegistration;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.wrapper.Wrapper;
 import org.gradle.language.base.plugins.LifecycleBasePlugin;
@@ -38,6 +39,8 @@ public final class WrapperPatchRegistrar {
      * Returns the task providers so the consumer can add dependencies (e.g. generation tasks).
      */
     public static WrapperPatchRegistration register(Project rootProject, WrapperPatchConfig config) {
+        ensureLockServiceRegistered(rootProject);
+
         TaskProvider<Wrapper> wrapperTask = rootProject.getTasks().named("wrapper", Wrapper.class);
 
         TaskProvider<WrapperPatcherTask> patchTask = rootProject
@@ -85,6 +88,22 @@ public final class WrapperPatchRegistrar {
             task.getPatchedGradlewScript()
                     .set(rootProject.file(rootProject.getRootDir().toPath().resolve("gradlew")));
         });
+    }
+
+    private static final String LOCK_SERVICE_NAME = "gradlewPatchLock";
+
+    @SuppressWarnings("unchecked")
+    private static void ensureLockServiceRegistered(Project project) {
+        BuildServiceRegistration<?, ?> existing =
+                project.getGradle().getSharedServices().getRegistrations().findByName(LOCK_SERVICE_NAME);
+        if (existing != null) {
+            return;
+        }
+        project.getGradle()
+                .getSharedServices()
+                .registerIfAbsent(LOCK_SERVICE_NAME, GradlewPatchLockService.class, spec -> {
+                    spec.getMaxParallelUsages().set(1);
+                });
     }
 
     private WrapperPatchRegistrar() {}

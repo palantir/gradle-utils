@@ -56,10 +56,8 @@ class WrapperPatcherIntegrationTest {
             WrapperPatchRegistrar.register(project, ImmutableWrapperPatchConfig.builder()
                 .patchName('%s')
                 .patchContent('''\
-            # >>> Test patch >>>
             # !! Contents within this block are managed by tests !!
             echo "test patch applied"
-            # <<< Test patch <<<
             '''.stripIndent())
                 .patchTaskName('patchTestWrapper')
                 .checkTaskName('checkTestWrapper')
@@ -96,6 +94,115 @@ class WrapperPatcherIntegrationTest {
     void check_task_succeeds_when_patch_is_present(GradleInvoker gradle) {
         gradle.withArgs("wrapper").buildsSuccessfully();
         gradle.withArgs("checkTestWrapper").buildsSuccessfully();
+    }
+
+    @Test
+    void multiple_patches_coexist(GradleInvoker gradle, RootProject rootProject) {
+        rootProject.buildGradle().append("""
+            WrapperPatchRegistrar.register(project, ImmutableWrapperPatchConfig.builder()
+                .patchName('Patch A')
+                .patchContent('''\
+            echo "patch A"
+            '''.stripIndent())
+                .patchTaskName('patchA')
+                .checkTaskName('checkA')
+                .build())
+
+            WrapperPatchRegistrar.register(project, ImmutableWrapperPatchConfig.builder()
+                .patchName('Patch B')
+                .patchContent('''\
+            echo "patch B"
+            '''.stripIndent())
+                .patchTaskName('patchB')
+                .checkTaskName('checkB')
+                .build())
+            """);
+
+        gradle.withArgs("wrapper", "--parallel").buildsSuccessfully();
+
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .contains("# >>> Patch A >>>")
+                .contains("# <<< Patch A <<<")
+                .contains("# >>> Patch B >>>")
+                .contains("# <<< Patch B <<<");
+
+        // Both checks should pass
+        gradle.withArgs("checkA", "checkB").buildsSuccessfully();
+    }
+
+    @Test
+    void multiple_patches_with_parallel_execution(GradleInvoker gradle, RootProject rootProject) {
+        rootProject.buildGradle().append("""
+            WrapperPatchRegistrar.register(project, ImmutableWrapperPatchConfig.builder()
+                .patchName('Patch A')
+                .patchContent('''\
+            echo "patch A"
+            '''.stripIndent())
+                .patchTaskName('patchA')
+                .checkTaskName('checkA')
+                .build())
+
+            WrapperPatchRegistrar.register(project, ImmutableWrapperPatchConfig.builder()
+                .patchName('Patch B')
+                .patchContent('''\
+            echo "patch B"
+            '''.stripIndent())
+                .patchTaskName('patchB')
+                .checkTaskName('checkB')
+                .build())
+            """);
+
+        // Run with --parallel to verify the build service serializes patch tasks
+        gradle.withArgs("wrapper", "--parallel").buildsSuccessfully();
+
+        // All three patches (setup + A + B) should be present
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .contains(PATCH_HEADER)
+                .contains(PATCH_FOOTER)
+                .contains("# >>> Patch A >>>")
+                .contains("# <<< Patch A <<<")
+                .contains("# >>> Patch B >>>")
+                .contains("# <<< Patch B <<<");
+
+        // All check tasks should pass
+        gradle.withArgs("checkTestWrapper", "checkA", "checkB").buildsSuccessfully();
+    }
+
+    @Test
+    void check_task_fails_when_patch_content_is_modified(GradleInvoker gradle, RootProject rootProject) {
+        gradle.withArgs("wrapper").buildsSuccessfully();
+        gradle.withArgs("checkTestWrapper").buildsSuccessfully();
+
+        // Modify the patch content inside the markers
+        rootProject
+                .file("gradlew")
+                .edit(content -> content.replace("echo \"test patch applied\"", "echo \"tampered\""));
+
+        InvocationResult result = gradle.withArgs("checkTestWrapper").buildsWithFailure();
+        assertThat(result).task(":checkTestWrapper").failed();
+    }
+
+    @Test
+    void patch_task_re_runs_after_wrapper_regenerates(GradleInvoker gradle, RootProject rootProject) {
+        gradle.withArgs("wrapper").buildsSuccessfully();
+
+        // Running wrapper again regenerates gradlew, so patch must re-run
+        InvocationResult secondRun = gradle.withArgs("wrapper").buildsSuccessfully();
+        assertThat(secondRun).task(":patchTestWrapper").succeeded();
+
+        // Patch should still be present
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .containsOnlyOnce(PATCH_HEADER)
+                .containsOnlyOnce(PATCH_FOOTER);
     }
 
     @Test

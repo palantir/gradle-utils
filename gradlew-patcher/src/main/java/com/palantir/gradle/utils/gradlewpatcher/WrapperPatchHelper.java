@@ -119,6 +119,15 @@ final class WrapperPatchHelper {
         return newLines.stream().collect(Collectors.joining(System.lineSeparator()));
     }
 
+    static List<String> getPatchLinesWithHeader(String patchContent, String patchName) {
+        List<String> contentLines = patchContent.lines().toList();
+        List<String> lines = new ArrayList<>(contentLines.size() + 2);
+        lines.add(patchHeader(patchName));
+        lines.addAll(contentLines);
+        lines.add(patchFooter(patchName));
+        return lines;
+    }
+
     private static String patchHeader(String patchName) {
         return "# >>> " + patchName + " >>>";
     }
