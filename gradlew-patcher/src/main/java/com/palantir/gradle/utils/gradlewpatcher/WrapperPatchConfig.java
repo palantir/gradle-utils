@@ -21,13 +21,15 @@ import org.immutables.value.Value;
 /** Configuration for registering a wrapper patcher. */
 @Value.Immutable
 public interface WrapperPatchConfig {
-    String patchHeader();
+    /** Human-readable name for this patch, used to generate header/footer markers in the gradlew script. */
+    String patchName();
 
-    String patchFooter();
+    /** Shell script lines to insert between the header and footer markers in the gradlew script. */
+    String patchContent();
 
-    String patchResource();
-
+    /** Name of the Gradle task that applies the patch to the wrapper script. */
     String patchTaskName();
 
+    /** Name of the Gradle task that validates the wrapper script contains the expected patch. */
     String checkTaskName();
 }

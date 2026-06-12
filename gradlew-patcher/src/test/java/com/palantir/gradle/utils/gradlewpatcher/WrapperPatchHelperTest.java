@@ -30,6 +30,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 class WrapperPatchHelperTest {
 
+    private static final String PATCH_NAME = "Test patch";
     private static final String HEADER = "# >>> Test patch >>>";
     private static final String FOOTER = "# <<< Test patch <<<";
 
@@ -57,7 +58,7 @@ class WrapperPatchHelperTest {
         void finds_patch_block() {
             List<String> lines = List.of("before", HEADER, "content", FOOTER, "after");
 
-            Optional<PatchLineNumbers> result = WrapperPatchHelper.getPatchLineNumbers(lines, HEADER, FOOTER);
+            Optional<PatchLineNumbers> result = WrapperPatchHelper.getPatchLineNumbers(lines, PATCH_NAME);
 
             assertThat(result).isPresent();
             assertThat(result.get().startIndex()).isEqualTo(1);
@@ -68,7 +69,7 @@ class WrapperPatchHelperTest {
         void returns_empty_when_no_patch() {
             List<String> lines = List.of("before", "content", "after");
 
-            assertThat(WrapperPatchHelper.getPatchLineNumbers(lines, HEADER, FOOTER))
+            assertThat(WrapperPatchHelper.getPatchLineNumbers(lines, PATCH_NAME))
                     .isEmpty();
         }
 
@@ -76,7 +77,7 @@ class WrapperPatchHelperTest {
         void throws_on_duplicate_headers() {
             List<String> lines = List.of(HEADER, "content", FOOTER, HEADER, "more", FOOTER);
 
-            assertThatThrownBy(() -> WrapperPatchHelper.getPatchLineNumbers(lines, HEADER, FOOTER))
+            assertThatThrownBy(() -> WrapperPatchHelper.getPatchLineNumbers(lines, PATCH_NAME))
                     .isInstanceOf(IllegalArgumentException.class)
                     .hasMessageContaining("expected at most 1 header");
         }
@@ -85,7 +86,7 @@ class WrapperPatchHelperTest {
         void throws_on_missing_footer() {
             List<String> lines = List.of(HEADER, "content", "no footer");
 
-            assertThatThrownBy(() -> WrapperPatchHelper.getPatchLineNumbers(lines, HEADER, FOOTER))
+            assertThatThrownBy(() -> WrapperPatchHelper.getPatchLineNumbers(lines, PATCH_NAME))
                     .isInstanceOf(IllegalStateException.class)
                     .hasMessageContaining("missing closing footer");
         }
@@ -97,7 +98,7 @@ class WrapperPatchHelperTest {
         void removes_existing_patch() {
             List<String> lines = List.of("before", HEADER, "content", FOOTER, "after");
 
-            List<String> result = WrapperPatchHelper.getLinesWithoutPatch(lines, HEADER, FOOTER);
+            List<String> result = WrapperPatchHelper.getLinesWithoutPatch(lines, PATCH_NAME);
 
             assertThat(result).containsExactly("before", "after");
         }
@@ -106,7 +107,7 @@ class WrapperPatchHelperTest {
         void returns_all_lines_when_no_patch() {
             List<String> lines = List.of("a", "b", "c");
 
-            List<String> result = WrapperPatchHelper.getLinesWithoutPatch(lines, HEADER, FOOTER);
+            List<String> result = WrapperPatchHelper.getLinesWithoutPatch(lines, PATCH_NAME);
 
             assertThat(result).containsExactly("a", "b", "c");
         }
@@ -115,7 +116,7 @@ class WrapperPatchHelperTest {
         void handles_patch_at_end_of_file() {
             List<String> lines = List.of("before", HEADER, "content", FOOTER);
 
-            List<String> result = WrapperPatchHelper.getLinesWithoutPatch(lines, HEADER, FOOTER);
+            List<String> result = WrapperPatchHelper.getLinesWithoutPatch(lines, PATCH_NAME);
 
             assertThat(result).containsExactly("before");
         }
@@ -124,9 +125,28 @@ class WrapperPatchHelperTest {
         void handles_patch_at_start_of_file() {
             List<String> lines = List.of(HEADER, "content", FOOTER, "after");
 
-            List<String> result = WrapperPatchHelper.getLinesWithoutPatch(lines, HEADER, FOOTER);
+            List<String> result = WrapperPatchHelper.getLinesWithoutPatch(lines, PATCH_NAME);
 
             assertThat(result).containsExactly("after");
+        }
+    }
+
+    @Nested
+    class ReadAllLines {
+        @Test
+        void preserves_trailing_newline(@TempDir Path dir) throws IOException {
+            Path file = dir.resolve("trailing.txt");
+            Files.writeString(file, "a\nb\n");
+
+            assertThat(WrapperPatchHelper.readAllLines(file)).containsExactly("a", "b", "");
+        }
+
+        @Test
+        void handles_no_trailing_newline(@TempDir Path dir) throws IOException {
+            Path file = dir.resolve("no-trailing.txt");
+            Files.writeString(file, "a\nb");
+
+            assertThat(WrapperPatchHelper.readAllLines(file)).containsExactly("a", "b");
         }
     }
 
@@ -143,23 +163,23 @@ class WrapperPatchHelperTest {
                     List.of("before", headerA, "a-content", footerA, headerB, "b-content", footerB, "after");
 
             // Can find patch A
-            Optional<PatchLineNumbers> patchA = WrapperPatchHelper.getPatchLineNumbers(lines, headerA, footerA);
+            Optional<PatchLineNumbers> patchA = WrapperPatchHelper.getPatchLineNumbers(lines, "Patch A");
             assertThat(patchA).isPresent();
             assertThat(patchA.get().startIndex()).isEqualTo(1);
             assertThat(patchA.get().endIndex()).isEqualTo(3);
 
             // Can find patch B
-            Optional<PatchLineNumbers> patchB = WrapperPatchHelper.getPatchLineNumbers(lines, headerB, footerB);
+            Optional<PatchLineNumbers> patchB = WrapperPatchHelper.getPatchLineNumbers(lines, "Patch B");
             assertThat(patchB).isPresent();
             assertThat(patchB.get().startIndex()).isEqualTo(4);
             assertThat(patchB.get().endIndex()).isEqualTo(6);
 
             // Can remove patch A, leaving patch B
-            List<String> withoutA = WrapperPatchHelper.getLinesWithoutPatch(lines, headerA, footerA);
+            List<String> withoutA = WrapperPatchHelper.getLinesWithoutPatch(lines, "Patch A");
             assertThat(withoutA).containsExactly("before", headerB, "b-content", footerB, "after");
 
             // Can remove patch B, leaving patch A
-            List<String> withoutB = WrapperPatchHelper.getLinesWithoutPatch(lines, headerB, footerB);
+            List<String> withoutB = WrapperPatchHelper.getLinesWithoutPatch(lines, "Patch B");
             assertThat(withoutB).containsExactly("before", headerA, "a-content", footerA, "after");
         }
     }

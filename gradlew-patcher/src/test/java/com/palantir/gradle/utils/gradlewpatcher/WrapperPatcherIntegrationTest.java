@@ -31,8 +31,9 @@ import org.junit.jupiter.api.Test;
 @GradlePluginTests
 class WrapperPatcherIntegrationTest {
 
-    private static final String PATCH_HEADER = "# >>> Test patch >>>";
-    private static final String PATCH_FOOTER = "# <<< Test patch <<<";
+    private static final String PATCH_NAME = "Test patch";
+    private static final String PATCH_HEADER = "# >>> " + PATCH_NAME + " >>>";
+    private static final String PATCH_FOOTER = "# <<< " + PATCH_NAME + " <<<";
 
     @BeforeEach
     void setup(RootProject rootProject) {
@@ -53,13 +54,17 @@ class WrapperPatcherIntegrationTest {
             import com.palantir.gradle.utils.gradlewpatcher.WrapperPatchRegistrar
 
             WrapperPatchRegistrar.register(project, ImmutableWrapperPatchConfig.builder()
-                .patchHeader('%s')
-                .patchFooter('%s')
-                .patchResource('test-wrapper-patch.sh')
+                .patchName('%s')
+                .patchContent('''\
+            # >>> Test patch >>>
+            # !! Contents within this block are managed by tests !!
+            echo "test patch applied"
+            # <<< Test patch <<<
+            '''.stripIndent())
                 .patchTaskName('patchTestWrapper')
                 .checkTaskName('checkTestWrapper')
                 .build())
-            """, PATCH_HEADER, PATCH_FOOTER);
+            """, PATCH_NAME);
     }
 
     @Test

@@ -17,10 +17,6 @@
 package com.palantir.gradle.utils.gradlewpatcher;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.IntStream;
 import org.gradle.api.DefaultTask;
@@ -47,13 +43,10 @@ public abstract class WrapperPatcherTask extends DefaultTask {
     private static final String SHEBANG = "#!";
 
     @Input
-    public abstract Property<String> getPatchHeader();
+    public abstract Property<String> getPatchName();
 
     @Input
-    public abstract Property<String> getPatchFooter();
-
-    @Input
-    public abstract Property<String> getPatchResource();
+    public abstract Property<String> getPatchContent();
 
     @Input
     public abstract Property<Boolean> getGenerate();
@@ -86,7 +79,7 @@ public abstract class WrapperPatcherTask extends DefaultTask {
 
     private void checkContainsPatch() {
         List<String> scriptPatchLines = getPatchedLines();
-        List<String> expectedPatchLines = loadPatchLines();
+        List<String> expectedPatchLines = getPatchContent().get().lines().toList();
         if (!scriptPatchLines.equals(expectedPatchLines)) {
             throw new IllegalStateException("Gradle Wrapper script is out of date, please run `./gradlew "
                     + getPatchTaskName().get() + "` to fix.");
@@ -97,8 +90,8 @@ public abstract class WrapperPatcherTask extends DefaultTask {
         File originalGradlewScript = getOriginalGradlewScript().getAsFile().get();
         List<String> initialLines = WrapperPatchHelper.readAllLines(originalGradlewScript.toPath());
         List<String> linesNoPatch = WrapperPatchHelper.getLinesWithoutPatch(
-                initialLines, getPatchHeader().get(), getPatchFooter().get());
-        List<String> patchLines = loadPatchLines();
+                initialLines, getPatchName().get());
+        List<String> patchLines = getPatchContent().get().lines().toList();
         int insertIndex = getInsertLineIndex(linesNoPatch);
         WrapperPatchHelper.writeContentWithPatch(
                 getPatchedGradlewScript().getAsFile().get().toPath(), linesNoPatch, patchLines, insertIndex);
@@ -107,18 +100,13 @@ public abstract class WrapperPatcherTask extends DefaultTask {
     private List<String> getPatchedLines() {
         File gradlewFile = getOriginalGradlewScript().get().getAsFile();
         List<String> initialLines = WrapperPatchHelper.readAllLines(gradlewFile.toPath());
-        return WrapperPatchHelper.getPatchLineNumbers(
-                        initialLines, getPatchHeader().get(), getPatchFooter().get())
-                .map(patchLineNumbers ->
-                        initialLines.subList(patchLineNumbers.startIndex(), patchLineNumbers.endIndex() + 1))
-                .orElseGet(List::of);
+        return WrapperPatchHelper.getPatchedLines(initialLines, getPatchName().get());
     }
-
     /**
      * gradlew contains a comment block that explains how it works. We are trying to add the patch block after it.
      * The fallback is adding the patch block directly after the shebang line.
      */
-    private int getInsertLineIndex(List<String> lines) {
+    private static int getInsertLineIndex(List<String> lines) {
         List<Integer> explanationBlock = IntStream.range(0, lines.size())
                 .filter(i -> lines.get(i).startsWith(COMMENT_BLOCK))
                 .limit(2)
@@ -134,19 +122,5 @@ public abstract class WrapperPatcherTask extends DefaultTask {
         }
 
         throw new IllegalStateException("Unable to find where to patch the gradlew file, aborting...");
-    }
-
-    private List<String> loadPatchLines() {
-        String resource = getPatchResource().get();
-        try (InputStream inputStream = getClass().getClassLoader().getResourceAsStream(resource)) {
-            if (inputStream == null) {
-                throw new IllegalArgumentException("Resource not found: " + resource);
-            }
-            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8)
-                    .lines()
-                    .toList();
-        } catch (IOException e) {
-            throw new UncheckedIOException(String.format("Unable to read the %s patch file", resource), e);
-        }
     }
 }

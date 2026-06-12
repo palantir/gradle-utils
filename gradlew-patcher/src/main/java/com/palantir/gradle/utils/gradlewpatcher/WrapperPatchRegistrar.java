@@ -76,9 +76,8 @@ public final class WrapperPatchRegistrar {
             TaskProvider<Wrapper> wrapperTask,
             WrapperPatchConfig config) {
         taskProvider.configure(task -> {
-            task.getPatchHeader().set(config.patchHeader());
-            task.getPatchFooter().set(config.patchFooter());
-            task.getPatchResource().set(config.patchResource());
+            task.getPatchName().set(config.patchName());
+            task.getPatchContent().set(config.patchContent());
             task.getPatchTaskName().set(config.patchTaskName());
             task.getOriginalGradlewScript()
                     .fileProvider(rootProject.provider(() -> wrapperTask.get().getScriptFile()));

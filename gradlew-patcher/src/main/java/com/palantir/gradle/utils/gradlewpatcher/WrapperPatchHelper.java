@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 /**
  * Utility for managing marker-delimited patch blocks in shell scripts.
@@ -33,8 +32,8 @@ import java.util.stream.Stream;
  */
 final class WrapperPatchHelper {
 
-    static List<String> getLinesWithoutPatch(List<String> initialLines, String patchHeader, String patchFooter) {
-        Optional<PatchLineNumbers> patchLineRange = getPatchLineNumbers(initialLines, patchHeader, patchFooter);
+    static List<String> getLinesWithoutPatch(List<String> initialLines, String patchName) {
+        Optional<PatchLineNumbers> patchLineRange = getPatchLineNumbers(initialLines, patchName);
         if (patchLineRange.isEmpty()) {
             return new ArrayList<>(initialLines);
         }
@@ -47,11 +46,10 @@ final class WrapperPatchHelper {
         return linesNoPatch;
     }
 
+    // reads all lines including the trailing empty line (if the file ends with \n)
     static List<String> readAllLines(Path filePath) {
         try {
-            Stream<String> maybeExtraLine = Files.readString(filePath).endsWith("\n") ? Stream.of("") : Stream.empty();
-            return Stream.concat(Files.readAllLines(filePath).stream(), maybeExtraLine)
-                    .toList();
+            return List.of(Files.readString(filePath).split("\n", -1));
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to read file: " + filePath, e);
         }
@@ -74,8 +72,9 @@ final class WrapperPatchHelper {
         return newLines.stream().collect(Collectors.joining(System.lineSeparator()));
     }
 
-    static Optional<PatchLineNumbers> getPatchLineNumbers(
-            List<String> content, String patchHeader, String patchFooter) {
+    static Optional<PatchLineNumbers> getPatchLineNumbers(List<String> content, String patchName) {
+        String patchHeader = patchHeader(patchName);
+        String patchFooter = patchFooter(patchName);
         List<Integer> startPatchIndexes = IntStream.range(0, content.size())
                 .filter(i -> content.get(i).endsWith(patchHeader))
                 .limit(2)
@@ -111,6 +110,21 @@ final class WrapperPatchHelper {
         }
 
         return Optional.of(new PatchLineNumbers(startIndex, endPatchIndexes.get(0)));
+    }
+
+    static List<String> getPatchedLines(List<String> initialLines, String patchName) {
+        return getPatchLineNumbers(initialLines, patchName)
+                .map(patchLineNumbers ->
+                        initialLines.subList(patchLineNumbers.startIndex(), patchLineNumbers.endIndex() + 1))
+                .orElseGet(List::of);
+    }
+
+    private static String patchHeader(String patchName) {
+        return "# >>> " + patchName + " >>>";
+    }
+
+    private static String patchFooter(String patchName) {
+        return "# <<< " + patchName + " <<<";
     }
 
     private WrapperPatchHelper() {}
