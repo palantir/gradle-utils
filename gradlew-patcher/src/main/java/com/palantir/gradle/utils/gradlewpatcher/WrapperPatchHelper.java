@@ -64,14 +64,6 @@ final class WrapperPatchHelper {
         }
     }
 
-    private static String getContentWithPatch(List<String> initialLines, List<String> patchLines, int insertIndex) {
-        List<String> newLines = new ArrayList<>(initialLines.size() + patchLines.size());
-        newLines.addAll(initialLines.subList(0, insertIndex));
-        newLines.addAll(patchLines);
-        newLines.addAll(initialLines.subList(insertIndex, initialLines.size()));
-        return newLines.stream().collect(Collectors.joining(System.lineSeparator()));
-    }
-
     static Optional<PatchLineNumbers> getPatchLineNumbers(List<String> content, String patchName) {
         String patchHeader = patchHeader(patchName);
         String patchFooter = patchFooter(patchName);
@@ -119,6 +111,14 @@ final class WrapperPatchHelper {
                 .orElseGet(List::of);
     }
 
+    private static String getContentWithPatch(List<String> initialLines, List<String> patchLines, int insertIndex) {
+        List<String> newLines = new ArrayList<>(initialLines.size() + patchLines.size());
+        newLines.addAll(initialLines.subList(0, insertIndex));
+        newLines.addAll(patchLines);
+        newLines.addAll(initialLines.subList(insertIndex, initialLines.size()));
+        return newLines.stream().collect(Collectors.joining(System.lineSeparator()));
+    }
+
     private static String patchHeader(String patchName) {
         return "# >>> " + patchName + " >>>";
     }
@@ -126,6 +126,8 @@ final class WrapperPatchHelper {
     private static String patchFooter(String patchName) {
         return "# <<< " + patchName + " <<<";
     }
+
+    record PatchLineNumbers(int startIndex, int endIndex) {}
 
     private WrapperPatchHelper() {}
 }

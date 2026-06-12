@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//private/tmp/**)",
+      "Bash(unzip -q ~/.gradle/caches/modules-2/files-2.1/com.palantir.gradle.plugintesting/gradle-plugin-testing/0.44.0/22837feaa04fa7a350307ace0ae4a4886ff5f354/gradle-plugin-testing-0.44.0.jar)",
+      "Bash(unzip -l ~/.gradle/caches/modules-2/files-2.1/com.palantir.gradle.plugintesting/gradle-plugin-testing/0.44.0/22837feaa04fa7a350307ace0ae4a4886ff5f354/gradle-plugin-testing-0.44.0.jar)",
+      "Bash(grep -E \"\\\\.class$\")",
+      "Bash(grep \"\\\\.class$\")",
+      "Bash(unzip -l ~/.gradle/caches/modules-2/files-2.1/com.palantir.gradle.plugintesting/plugin-testing-core/0.44.0/42c15555e2cc666e829f7d7bee4f64870d0f140d/plugin-testing-core-0.44.0.jar)",
+      "Bash(unzip -l ~/.gradle/caches/modules-2/files-2.1/com.palantir.gradle.plugintesting/gradle-plugin-testing-junit/0.44.0/74e57f6a499d57765b037c621a1946dac833797f/gradle-plugin-testing-junit-0.44.0.jar)",
+      "Bash(unzip -l ~/.gradle/caches/modules-2/files-2.1/com.palantir.gradle.plugintesting/gradle-plugin-testing-junit/0.44.0/d5719fa1b21dfb68379bbc25febb6a4a2c4a795f/gradle-plugin-testing-junit-0.44.0-sources.jar)",
+      "Bash(./gradlew :gradlew-patcher:compileJava)",
+      "Bash(xargs cat *)",
+      "Bash(grep -r \"mavenLocal\\\\|jar\\\\|plugin\\\\|classpath\" /Volumes/git/gradle-utils/*/build.gradle)",
+      "WebSearch",
+      "Bash(grep -r \"tasks.named\\\\|test\\\\|Test\" /Volumes/git/gradle-utils/*/build.gradle)",
+      "Bash(grep -r \"file\\\\|jar\\\\|path\\\\|dir\" /Volumes/git/gradle-utils/*/src/test/java --include=\"*.java\" -B 2 -A 2)",
+      "Bash(xargs ls *)",
+      "Bash(grep -r \"buildGradle\\\\|repositories\\\\|dependencies\\\\|classpath\" /Volumes/git/gradle-utils/*/src/test/java --include=\"*.java\" -B 1 -A 1)",
+      "Bash(grep -r \"files\\\\|file\\(\" /Volumes/git/gradle-utils/*/src/test/java --include=\"*.java\" -B 2 -A 2)",
+      "Bash(grep -r \"buildGradle\\(\\)\\\\|repositories\\\\|mavenLocal\" /Volumes/git/gradle-utils/*/src/test/java --include=\"*.java\" -A 5)",
+      "Bash(./gradlew :gradlew-patcher:test)",
+      "Bash(jar xf *)",
+      "Bash(find . -name \"PluginTestingPlugin.class\" -exec javap -c -private {} \\\\;)",
+      "Bash(xmllint --html --xpath '//pre' /Volumes/git/gradle-utils/gradlew-patcher/build/reports/tests/test/classes/com.palantir.gradle.utils.gradlewpatcher.WrapperPatcherIntegrationTest.html)",
+      "Bash(./gradlew :gradlew-patcher:compileTestJava)"
+    ]
+  }
+}

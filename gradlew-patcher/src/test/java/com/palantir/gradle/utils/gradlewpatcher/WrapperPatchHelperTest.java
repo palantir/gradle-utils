@@ -58,7 +58,8 @@ class WrapperPatchHelperTest {
         void finds_patch_block() {
             List<String> lines = List.of("before", HEADER, "content", FOOTER, "after");
 
-            Optional<PatchLineNumbers> result = WrapperPatchHelper.getPatchLineNumbers(lines, PATCH_NAME);
+            Optional<WrapperPatchHelper.PatchLineNumbers> result =
+                    WrapperPatchHelper.getPatchLineNumbers(lines, PATCH_NAME);
 
             assertThat(result).isPresent();
             assertThat(result.get().startIndex()).isEqualTo(1);
@@ -163,13 +164,15 @@ class WrapperPatchHelperTest {
                     List.of("before", headerA, "a-content", footerA, headerB, "b-content", footerB, "after");
 
             // Can find patch A
-            Optional<PatchLineNumbers> patchA = WrapperPatchHelper.getPatchLineNumbers(lines, "Patch A");
+            Optional<WrapperPatchHelper.PatchLineNumbers> patchA =
+                    WrapperPatchHelper.getPatchLineNumbers(lines, "Patch A");
             assertThat(patchA).isPresent();
             assertThat(patchA.get().startIndex()).isEqualTo(1);
             assertThat(patchA.get().endIndex()).isEqualTo(3);
 
             // Can find patch B
-            Optional<PatchLineNumbers> patchB = WrapperPatchHelper.getPatchLineNumbers(lines, "Patch B");
+            Optional<WrapperPatchHelper.PatchLineNumbers> patchB =
+                    WrapperPatchHelper.getPatchLineNumbers(lines, "Patch B");
             assertThat(patchB).isPresent();
             assertThat(patchB.get().startIndex()).isEqualTo(4);
             assertThat(patchB.get().endIndex()).isEqualTo(6);
