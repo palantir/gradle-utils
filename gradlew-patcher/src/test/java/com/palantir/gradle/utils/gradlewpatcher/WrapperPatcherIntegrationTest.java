@@ -22,9 +22,6 @@ import com.palantir.gradle.testing.execution.GradleInvoker;
 import com.palantir.gradle.testing.execution.InvocationResult;
 import com.palantir.gradle.testing.junit.GradlePluginTests;
 import com.palantir.gradle.testing.project.RootProject;
-import java.io.File;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -37,23 +34,10 @@ class WrapperPatcherIntegrationTest {
 
     @BeforeEach
     void setup(RootProject rootProject) {
-        String classpathFiles = Arrays.stream(System.getProperty("classpath").split(File.pathSeparator))
-                .map(path -> "'" + path + "'")
-                .collect(Collectors.joining(", "));
-
-        rootProject.buildGradle().prepend("""
-            buildscript {
-                dependencies {
-                    classpath files(%s)
-                }
-            }
-            """, classpathFiles);
+        rootProject.buildGradle().plugins().add("com.palantir.gradlew-patcher");
 
         rootProject.buildGradle().append("""
-            import com.palantir.gradle.utils.gradlewpatcher.WrapperPatcherPlugin
             import com.palantir.gradle.utils.gradlewpatcher.PatchDeclaration
-
-            apply plugin: WrapperPatcherPlugin
 
             def testPatch = objects.newInstance(PatchDeclaration)
             testPatch.id.set('test-patch')

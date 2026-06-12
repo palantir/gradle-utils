@@ -21,10 +21,3 @@ dependencies {
     testImplementation 'org.assertj:assertj-core'
 }
 
-tasks.named('test', Test) {
-    def classpath = sourceSets.main.runtimeClasspath
-    inputs.files(classpath)
-    doFirst {
-        systemProperty 'classpath', classpath.asPath
-    }
-}
