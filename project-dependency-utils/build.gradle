@@ -1,0 +1,19 @@
+apply plugin: 'java-library'
+apply plugin: 'com.palantir.external-publish-jar'
+apply plugin: 'groovy'
+apply plugin: 'com.palantir.gradle-plugin-testing'
+
+dependencies {
+    implementation gradleApi()
+
+    testImplementation 'org.assertj:assertj-core'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'com.netflix.nebula:nebula-test'
+}
+
+tasks.named('test', Test) {
+    systemProperty 'projectVersion', project.version
+
+    // Publish to maven local so that the tests can directly import ProjectDependencyUtils
+    dependsOn tasks.publishToMavenLocal
+}
