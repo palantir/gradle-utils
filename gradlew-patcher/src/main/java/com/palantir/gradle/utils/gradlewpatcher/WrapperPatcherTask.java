@@ -17,24 +17,29 @@
 package com.palantir.gradle.utils.gradlewpatcher;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.IntStream;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
+import org.gradle.api.provider.ListProperty;
+import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
-import org.gradle.api.services.ServiceReference;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
-import org.gradle.api.tasks.Internal;
+import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * Gradle task that patches or validates a patch block in the gradlew wrapper script.
+ * Composite Gradle task that patches or validates all registered patch blocks in the gradlew wrapper script.
  *
- * <p>When {@code generate} is {@code true}, the task inserts (or updates) the patch block.
- * When {@code false}, the task validates the existing patch matches the expected content.
+ * <p>When {@code generate} is {@code true}, the task strips all existing patches and re-inserts them
+ * in topological order. When {@code false}, the task validates that all patches are present with the
+ * expected content and in the correct relative order.
  */
 public abstract class WrapperPatcherTask extends DefaultTask {
 
@@ -42,11 +47,13 @@ public abstract class WrapperPatcherTask extends DefaultTask {
     private static final String COMMENT_BLOCK = "###";
     private static final String SHEBANG = "#!";
 
+    /** Patch names in topologically sorted order. */
     @Input
-    public abstract Property<String> getPatchName();
+    public abstract ListProperty<String> getOrderedPatchNames();
 
+    /** Mapping from patch name to patch content (without header/footer markers). */
     @Input
-    public abstract Property<String> getPatchContent();
+    public abstract MapProperty<String, String> getPatchContents();
 
     @Input
     public abstract Property<Boolean> getGenerate();
@@ -54,17 +61,8 @@ public abstract class WrapperPatcherTask extends DefaultTask {
     @InputFile
     public abstract RegularFileProperty getOriginalGradlewScript();
 
-    @Internal
+    @OutputFile
     public abstract RegularFileProperty getPatchedGradlewScript();
-
-    @Internal
-    public abstract RegularFileProperty getBuildDir();
-
-    @ServiceReference("gradlewPatchLock")
-    abstract Property<GradlewPatchLockService> getGradlewPatchLock();
-
-    @Input
-    public abstract Property<String> getPatchTaskName();
 
     public WrapperPatcherTask() {
         getGenerate().convention(false);
@@ -76,36 +74,72 @@ public abstract class WrapperPatcherTask extends DefaultTask {
             log.lifecycle("Patching the gradle wrapper files.");
             patchGradlewContent();
         } else {
-            checkContainsPatch();
-        }
-    }
-
-    private void checkContainsPatch() {
-        List<String> scriptPatchLines = getPatchedLines();
-        List<String> expectedPatchLines = WrapperPatchHelper.getPatchLinesWithHeader(
-                getPatchContent().get(), getPatchName().get());
-        if (!scriptPatchLines.equals(expectedPatchLines)) {
-            throw new IllegalStateException("Gradle Wrapper script is out of date, please run `./gradlew "
-                    + getPatchTaskName().get() + "` to fix.");
+            checkContainsPatches();
         }
     }
 
     private void patchGradlewContent() {
+        List<String> patchNames = getOrderedPatchNames().get();
+        Map<String, String> contents = getPatchContents().get();
+
         File originalGradlewScript = getOriginalGradlewScript().getAsFile().get();
-        List<String> initialLines = WrapperPatchHelper.readAllLines(originalGradlewScript.toPath());
-        List<String> linesNoPatch = WrapperPatchHelper.getLinesWithoutPatch(
-                initialLines, getPatchName().get());
-        List<String> patchLines = WrapperPatchHelper.getPatchLinesWithHeader(
-                getPatchContent().get(), getPatchName().get());
-        int insertIndex = getInsertLineIndex(linesNoPatch);
+        List<String> lines = WrapperPatchHelper.readAllLines(originalGradlewScript.toPath());
+
+        // Strip all existing patches
+        lines = WrapperPatchHelper.getLinesWithoutPatches(lines, patchNames);
+
+        // Find insertion point
+        int insertIndex = getInsertLineIndex(lines);
+
+        List<String> allPatchLines = patchNames.stream()
+                .flatMap(name -> WrapperPatchHelper.getPatchLinesWithHeader(contents.get(name), name).stream())
+                .toList();
+
         WrapperPatchHelper.writeContentWithPatch(
-                getPatchedGradlewScript().getAsFile().get().toPath(), linesNoPatch, patchLines, insertIndex);
+                getPatchedGradlewScript().getAsFile().get().toPath(), lines, allPatchLines, insertIndex);
     }
 
-    private List<String> getPatchedLines() {
+    private void checkContainsPatches() {
+        List<String> patchNames = getOrderedPatchNames().get();
+        Map<String, String> contents = getPatchContents().get();
+
         File gradlewFile = getOriginalGradlewScript().get().getAsFile();
-        List<String> initialLines = WrapperPatchHelper.readAllLines(gradlewFile.toPath());
-        return WrapperPatchHelper.getPatchedLines(initialLines, getPatchName().get());
+        List<String> lines = WrapperPatchHelper.readAllLines(gradlewFile.toPath());
+
+        List<String> errors = new ArrayList<>();
+        int lastEndIndex = -1;
+
+        for (String name : patchNames) {
+            List<String> expectedLines = WrapperPatchHelper.getPatchLinesWithHeader(contents.get(name), name);
+            Optional<WrapperPatchHelper.PatchLineNumbers> lineNumbers =
+                    WrapperPatchHelper.getPatchLineNumbers(lines, name);
+
+            if (lineNumbers.isEmpty()) {
+                errors.add(String.format("Patch '%s' is missing", name));
+                continue;
+            }
+
+            WrapperPatchHelper.PatchLineNumbers patchLines = lineNumbers.get();
+            List<String> actualLines = lines.subList(patchLines.startIndex(), patchLines.endIndex() + 1);
+
+            if (!actualLines.equals(expectedLines)) {
+                errors.add(String.format("Patch '%s' content does not match expected", name));
+            }
+
+            if (patchLines.startIndex() <= lastEndIndex) {
+                errors.add(String.format("Patch '%s' is out of order", name));
+            }
+
+            lastEndIndex = patchLines.endIndex();
+        }
+
+        if (!errors.isEmpty()) {
+            throw new IllegalStateException("""
+                Gradle Wrapper script is out of date:
+                  - %s
+                Please run `./gradlew patchGradlewWrapper` to fix.
+                """.formatted(String.join("\n  - ", errors)));
+        }
     }
 
     /**

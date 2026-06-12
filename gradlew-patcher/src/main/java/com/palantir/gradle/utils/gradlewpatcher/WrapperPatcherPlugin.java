@@ -1,0 +1,81 @@
+/*
+ * (c) Copyright 2026 Palantir Technologies Inc. All rights reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.palantir.gradle.utils.gradlewpatcher;
+
+import java.util.stream.Collectors;
+import org.gradle.api.Plugin;
+import org.gradle.api.Project;
+import org.gradle.api.tasks.TaskProvider;
+import org.gradle.api.tasks.wrapper.Wrapper;
+import org.gradle.language.base.plugins.LifecycleBasePlugin;
+
+/** Registers composite patch and check tasks for the gradlew wrapper script. */
+public class WrapperPatcherPlugin implements Plugin<Project> {
+
+    @Override
+    public void apply(Project project) {
+        WrapperPatcherExtension extension =
+                project.getExtensions().create("wrapperPatches", WrapperPatcherExtension.class);
+
+        TaskProvider<Wrapper> wrapperTask = project.getTasks().named("wrapper", Wrapper.class);
+
+        TaskProvider<WrapperPatcherTask> patchTask = project.getTasks()
+                .register("patchGradlewWrapper", WrapperPatcherTask.class, task -> {
+                    task.getGenerate().set(true);
+                });
+
+        TaskProvider<WrapperPatcherTask> checkTask = project.getTasks()
+                .register("checkGradlewWrapper", WrapperPatcherTask.class, task -> {
+                    task.getGenerate().set(false);
+                });
+
+        configureTask(project, extension, patchTask, wrapperTask);
+        configureTask(project, extension, checkTask, wrapperTask);
+
+        wrapperTask.configure(task -> task.finalizedBy(patchTask));
+
+        project.getPluginManager().withPlugin("lifecycle-base", _plugin -> {
+            project.getTasks()
+                    .named(LifecycleBasePlugin.CHECK_TASK_NAME)
+                    .configure(check -> check.dependsOn(checkTask));
+        });
+    }
+
+    private static void configureTask(
+            Project project,
+            WrapperPatcherExtension extension,
+            TaskProvider<WrapperPatcherTask> taskProvider,
+            TaskProvider<Wrapper> wrapperTask) {
+        taskProvider.configure(task -> {
+            task.getOrderedPatchNames()
+                    .set(project.provider(() -> PatchOrderResolver.resolve(
+                                    extension.getPatches().get())
+                            .stream()
+                            .map(p -> p.getPatchName().get())
+                            .toList()));
+            task.getPatchContents()
+                    .set(project.provider(() -> extension.getPatches().get().stream()
+                            .collect(Collectors.toMap(
+                                    p -> p.getPatchName().get(),
+                                    p -> p.getContent().get()))));
+            task.getOriginalGradlewScript()
+                    .fileProvider(project.provider(() -> wrapperTask.get().getScriptFile()));
+            task.getPatchedGradlewScript()
+                    .set(project.file(project.getRootDir().toPath().resolve("gradlew")));
+        });
+    }
+}

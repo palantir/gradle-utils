@@ -1,10 +1,20 @@
 apply plugin: 'java-library'
+apply plugin: 'java-gradle-plugin'
 apply plugin: 'com.palantir.external-publish-jar'
 apply plugin: 'com.palantir.gradle-plugin-testing'
 
+gradlePlugin {
+    plugins {
+        wrapperPatcher {
+            id = 'com.palantir.gradlew-patcher'
+            implementationClass = 'com.palantir.gradle.utils.gradlewpatcher.WrapperPatcherPlugin'
+        }
+    }
+}
+
 dependencies {
     annotationProcessor 'org.immutables:value'
-    compileOnly gradleApi()
+    implementation gradleApi()
     compileOnly 'org.immutables:value::annotations'
 
     testImplementation 'org.junit.jupiter:junit-jupiter'
