@@ -30,7 +30,7 @@ class PatchOrderResolverTest {
     private ObjectFactory objects;
 
     @BeforeEach
-    void setup() {
+    void before() {
         objects = ProjectBuilder.builder().build().getObjects();
     }
 

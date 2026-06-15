@@ -24,10 +24,10 @@ import org.gradle.api.tasks.wrapper.Wrapper;
 import org.gradle.language.base.plugins.LifecycleBasePlugin;
 
 /** Registers composite patch and check tasks for the gradlew wrapper script. */
-public class WrapperPatcherPlugin implements Plugin<Project> {
+public abstract class WrapperPatcherPlugin implements Plugin<Project> {
 
     @Override
-    public void apply(Project project) {
+    public final void apply(Project project) {
         WrapperPatcherExtension extension =
                 project.getExtensions().create("wrapperPatches", WrapperPatcherExtension.class);
 
