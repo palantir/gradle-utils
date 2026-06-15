@@ -15,6 +15,7 @@ gradlePlugin {
 dependencies {
     annotationProcessor 'org.immutables:value'
     implementation gradleApi()
+    implementation 'com.google.guava:guava'
     compileOnly 'org.immutables:value::annotations'
 
     testImplementation 'org.junit.jupiter:junit-jupiter'
