@@ -1,8 +1,0 @@
-type: feature
-feature:
-  description: |-
-    Add `project-dependency-utils` with `ProjectDependencyUtils.getProjectPath()`,
-    which reads a `ProjectDependency`'s path across Gradle 8 and 9 (using `getPath()`
-    on 8.11+ and falling back reflectively to `getDependencyProject()` on older Gradle).
-  links:
-  - https://github.com/palantir/gradle-utils/pull/643
