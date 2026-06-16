@@ -31,6 +31,8 @@ class WrapperPatcherIntegrationTest {
     private static final String PATCH_NAME = "Test patch";
     private static final String PATCH_HEADER = "# >>> " + PATCH_NAME + " >>>";
     private static final String PATCH_FOOTER = "# <<< " + PATCH_NAME + " <<<";
+    private static final String MANAGED_HEADER = "# >>> Managed patches >>>";
+    private static final String MANAGED_FOOTER = "# <<< Managed patches <<<";
 
     @BeforeEach
     void setup(RootProject rootProject) {
@@ -55,10 +57,12 @@ class WrapperPatcherIntegrationTest {
         gradle.withArgs("wrapper").buildsSuccessfully();
 
         rootProject.file("gradlew").assertThat().content().contains("""
+            # >>> Managed patches >>>
             # >>> Test patch >>>
             # !! Contents within this block are managed by tests !!
             echo "test patch applied"
             # <<< Test patch <<<
+            # <<< Managed patches <<<
             """);
     }
 
@@ -71,6 +75,8 @@ class WrapperPatcherIntegrationTest {
                 .file("gradlew")
                 .assertThat()
                 .content()
+                .containsOnlyOnce(MANAGED_HEADER)
+                .containsOnlyOnce(MANAGED_FOOTER)
                 .containsOnlyOnce(PATCH_HEADER)
                 .containsOnlyOnce(PATCH_FOOTER);
     }
@@ -87,15 +93,16 @@ class WrapperPatcherIntegrationTest {
 
         rootProject
                 .file("gradlew")
-                .edit(content -> content.replaceAll("(?s)" + PATCH_HEADER + ".*?" + PATCH_FOOTER + "\\n", ""));
+                .edit(content ->
+                        content.replaceAll("(?s)" + MANAGED_HEADER + ".*?" + MANAGED_FOOTER + "\\n", ""));
 
         InvocationResult result = gradle.withArgs("checkGradlewWrapper").buildsWithFailure();
         rootProject
                 .file("gradlew")
                 .assertThat()
                 .content()
-                .doesNotContain(PATCH_HEADER)
-                .doesNotContain(PATCH_FOOTER);
+                .doesNotContain(MANAGED_HEADER)
+                .doesNotContain(MANAGED_FOOTER);
         assertThat(result).output().contains("Gradle Wrapper script is out of date");
     }
 
@@ -135,12 +142,14 @@ class WrapperPatcherIntegrationTest {
                 .assertThat()
                 .content()
                 .containsSubsequence(
+                        MANAGED_HEADER,
                         PATCH_HEADER,
                         PATCH_FOOTER,
                         "# >>> Patch A >>>",
                         "# <<< Patch A <<<",
                         "# >>> Patch B >>>",
-                        "# <<< Patch B <<<");
+                        "# <<< Patch B <<<",
+                        MANAGED_FOOTER);
 
         gradle.withArgs("checkGradlewWrapper").buildsSuccessfully();
     }
@@ -164,18 +173,20 @@ class WrapperPatcherIntegrationTest {
 
         gradle.withArgs("wrapper").buildsSuccessfully();
 
-        // Verify ordering by checking content contains A before B
+        // Verify ordering by checking content contains A before B, all within managed block
         rootProject
                 .file("gradlew")
                 .assertThat()
                 .content()
                 .containsSubsequence(
+                        MANAGED_HEADER,
                         PATCH_HEADER,
                         PATCH_FOOTER,
                         "# >>> Patch A >>>",
                         "# <<< Patch A <<<",
                         "# >>> Patch B >>>",
-                        "# <<< Patch B <<<");
+                        "# <<< Patch B <<<",
+                        MANAGED_FOOTER);
     }
 
     @Test
@@ -201,22 +212,26 @@ class WrapperPatcherIntegrationTest {
             """);
 
         // Second run: both patches should be present, new patch after the original
-        gradle.withArgs("patchWrapper").buildsSuccessfully();
+        gradle.withArgs("wrapper").buildsSuccessfully();
 
         rootProject
                 .file("gradlew")
                 .assertThat()
                 .content()
+                .containsOnlyOnce(MANAGED_HEADER)
+                .containsOnlyOnce(MANAGED_FOOTER)
                 .containsOnlyOnce(PATCH_HEADER)
                 .containsOnlyOnce(PATCH_FOOTER)
                 .containsOnlyOnce("# >>> New patch >>>")
                 .containsOnlyOnce("# <<< New patch <<<")
                 .containsSubsequence(
+                        MANAGED_HEADER,
                         PATCH_HEADER,
                         PATCH_FOOTER,
                         "# >>> New patch >>>",
                         "echo \"new patch applied\"",
-                        "# <<< New patch <<<");
+                        "# <<< New patch <<<",
+                        MANAGED_FOOTER);
 
         gradle.withArgs("checkGradlewWrapper").buildsSuccessfully();
     }
@@ -244,24 +259,113 @@ class WrapperPatcherIntegrationTest {
             """);
 
         // Second run: both patches should be present, new patch before the original
-        gradle.withArgs("patchWrapper").buildsSuccessfully();
+        gradle.withArgs("wrapper").buildsSuccessfully();
 
         rootProject
                 .file("gradlew")
                 .assertThat()
                 .content()
+                .containsOnlyOnce(MANAGED_HEADER)
+                .containsOnlyOnce(MANAGED_FOOTER)
                 .containsOnlyOnce(PATCH_HEADER)
                 .containsOnlyOnce(PATCH_FOOTER)
                 .containsOnlyOnce("# >>> New patch >>>")
                 .containsOnlyOnce("# <<< New patch <<<")
                 .containsSubsequence(
+                        MANAGED_HEADER,
                         "# >>> New patch >>>",
                         "echo \"new patch applied\"",
                         "# <<< New patch <<<",
                         PATCH_HEADER,
-                        PATCH_FOOTER);
+                        PATCH_FOOTER,
+                        MANAGED_FOOTER);
 
         gradle.withArgs("checkGradlewWrapper").buildsSuccessfully();
+    }
+
+    @Test
+    void legacy_patch_without_managed_block_is_migrated(GradleInvoker gradle, RootProject rootProject) {
+        // First run produces a gradlew with the managed block
+        gradle.withArgs("wrapper").buildsSuccessfully();
+
+        // Simulate a legacy gradlew by stripping the managed header/footer but keeping the inner patch
+        rootProject.file("gradlew").edit(content -> content
+                .replace(MANAGED_HEADER + "\n", "")
+                .replace(MANAGED_FOOTER + "\n", ""));
+
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .doesNotContain(MANAGED_HEADER)
+                .doesNotContain(MANAGED_FOOTER)
+                .contains(PATCH_HEADER)
+                .contains(PATCH_FOOTER);
+
+        // Re-running the patch task should wrap it in the managed block
+        gradle.withArgs("patchGradlewWrapper").buildsSuccessfully();
+
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .containsOnlyOnce(MANAGED_HEADER)
+                .containsOnlyOnce(MANAGED_FOOTER)
+                .containsSubsequence(MANAGED_HEADER, PATCH_HEADER, PATCH_FOOTER, MANAGED_FOOTER);
+
+        gradle.withArgs("checkGradlewWrapper").buildsSuccessfully();
+    }
+
+    @Test
+    void unmanaged_legacy_patch_is_removed(GradleInvoker gradle, RootProject rootProject) {
+        // First run produces a gradlew with the managed block containing the test patch
+        gradle.withArgs("wrapper").buildsSuccessfully();
+
+        // Simulate a previously-registered patch inside the managed block that is no longer declared
+        rootProject.file("gradlew").edit(content -> content.replace(
+                PATCH_HEADER,
+                "# >>> Old patch >>>\necho \"old stuff\"\n# <<< Old patch <<<\n" + PATCH_HEADER));
+
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .contains("# >>> Old patch >>>")
+                .contains("# <<< Old patch <<<");
+
+        // Re-running the patch task should not preserve the unmanaged old patch
+        gradle.withArgs("patchGradlewWrapper").buildsSuccessfully();
+
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .doesNotContain("# >>> Old patch >>>")
+                .doesNotContain("# <<< Old patch <<<")
+                .doesNotContain("echo \"old stuff\"")
+                .containsOnlyOnce(MANAGED_HEADER)
+                .containsOnlyOnce(MANAGED_FOOTER)
+                .containsSubsequence(MANAGED_HEADER, PATCH_HEADER, PATCH_FOOTER, MANAGED_FOOTER);
+
+        gradle.withArgs("checkGradlewWrapper").buildsSuccessfully();
+    }
+
+    @Test
+    void no_patches_does_not_write_managed_block(GradleInvoker gradle, RootProject rootProject) {
+        // Remove the patch registered in setup so there are no patches
+        rootProject.file("build.gradle").edit(content ->
+                content.replaceAll("(?s)def testPatch.*?wrapperPatches\\.patches\\.add\\(testPatch\\)\\n", ""));
+
+        gradle.withArgs("wrapper").buildsSuccessfully();
+
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .doesNotContain(MANAGED_HEADER)
+                .doesNotContain(MANAGED_FOOTER)
+                .doesNotContain(PATCH_HEADER)
+                .doesNotContain(PATCH_FOOTER);
     }
 
     @Test

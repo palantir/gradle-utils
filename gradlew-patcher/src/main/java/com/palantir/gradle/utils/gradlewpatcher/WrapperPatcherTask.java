@@ -17,7 +17,6 @@
 package com.palantir.gradle.utils.gradlewpatcher;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -88,15 +87,20 @@ public abstract class WrapperPatcherTask extends DefaultTask {
         // Strip all existing patches
         lines = WrapperPatchHelper.getLinesWithoutPatches(lines, patchNames);
 
+        if (patchNames.isEmpty()) {
+            return;
+        }
+
         // Find insertion point
         int insertIndex = getInsertLineIndex(lines);
 
         List<String> allPatchLines = patchNames.stream()
                 .flatMap(name -> WrapperPatchHelper.getPatchLinesWithHeader(contents.get(name), name).stream())
                 .toList();
+        List<String> managedBlock = WrapperPatchHelper.wrapInManagedBlock(allPatchLines);
 
         WrapperPatchHelper.writeContentWithPatch(
-                getPatchedGradlewScript().getAsFile().get().toPath(), lines, allPatchLines, insertIndex);
+                getPatchedGradlewScript().getAsFile().get().toPath(), lines, managedBlock, insertIndex);
     }
 
     private void checkContainsPatches() {
@@ -106,39 +110,29 @@ public abstract class WrapperPatcherTask extends DefaultTask {
         File gradlewFile = getOriginalGradlewScript().get().getAsFile();
         List<String> lines = WrapperPatchHelper.readAllLines(gradlewFile.toPath());
 
-        List<String> errors = new ArrayList<>();
-        int lastEndIndex = -1;
+        List<String> expectedPatchLines = patchNames.stream()
+                .flatMap(name -> WrapperPatchHelper.getPatchLinesWithHeader(contents.get(name), name).stream())
+                .toList();
+        List<String> expectedBlock = WrapperPatchHelper.wrapInManagedBlock(expectedPatchLines);
 
-        for (String name : patchNames) {
-            List<String> expectedLines = WrapperPatchHelper.getPatchLinesWithHeader(contents.get(name), name);
-            Optional<WrapperPatchHelper.PatchLineNumbers> lineNumbers =
-                    WrapperPatchHelper.getPatchLineNumbers(lines, name);
+        Optional<WrapperPatchHelper.PatchLineNumbers> managedRange =
+                WrapperPatchHelper.getPatchLineNumbers(lines, WrapperPatchHelper.MANAGED_PATCH_NAME);
 
-            if (lineNumbers.isEmpty()) {
-                errors.add(String.format("Patch '%s' is missing", name));
-                continue;
-            }
-
-            WrapperPatchHelper.PatchLineNumbers patchLines = lineNumbers.get();
-            List<String> actualLines = lines.subList(patchLines.startIndex(), patchLines.endIndex() + 1);
-
-            if (!actualLines.equals(expectedLines)) {
-                errors.add(String.format("Patch '%s' content does not match expected", name));
-            }
-
-            if (patchLines.startIndex() <= lastEndIndex) {
-                errors.add(String.format("Patch '%s' is out of order", name));
-            }
-
-            lastEndIndex = patchLines.endIndex();
+        if (managedRange.isEmpty()) {
+            throw new IllegalStateException("""
+                Gradle Wrapper script is out of date: managed patches block is missing.
+                Please run `./gradlew patchGradlewWrapper` to fix.
+                """);
         }
 
-        if (!errors.isEmpty()) {
+        WrapperPatchHelper.PatchLineNumbers range = managedRange.get();
+        List<String> actualBlock = lines.subList(range.startIndex(), range.endIndex() + 1);
+
+        if (!actualBlock.equals(expectedBlock)) {
             throw new IllegalStateException("""
-                Gradle Wrapper script is out of date:
-                  - %s
+                Gradle Wrapper script is out of date: managed patches block does not match expected content.
                 Please run `./gradlew patchGradlewWrapper` to fix.
-                """.formatted(String.join("\n  - ", errors)));
+                """);
         }
     }
 

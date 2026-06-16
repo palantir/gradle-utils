@@ -32,6 +32,8 @@ import java.util.stream.IntStream;
  */
 final class WrapperPatchHelper {
 
+    static final String MANAGED_PATCH_NAME = "Managed patches";
+
     static List<String> getLinesWithoutPatch(List<String> initialLines, String patchName) {
         Optional<PatchLineNumbers> patchLineRange = getPatchLineNumbers(initialLines, patchName);
         if (patchLineRange.isEmpty()) {
@@ -104,13 +106,6 @@ final class WrapperPatchHelper {
         return Optional.of(new PatchLineNumbers(startIndex, endPatchIndexes.get(0)));
     }
 
-    static List<String> getPatchedLines(List<String> initialLines, String patchName) {
-        return getPatchLineNumbers(initialLines, patchName)
-                .map(patchLineNumbers ->
-                        initialLines.subList(patchLineNumbers.startIndex(), patchLineNumbers.endIndex() + 1))
-                .orElseGet(List::of);
-    }
-
     private static String getContentWithPatch(List<String> initialLines, List<String> patchLines, int insertIndex) {
         List<String> newLines = new ArrayList<>(initialLines.size() + patchLines.size());
         newLines.addAll(initialLines.subList(0, insertIndex));
@@ -120,10 +115,22 @@ final class WrapperPatchHelper {
     }
 
     static List<String> getLinesWithoutPatches(List<String> initialLines, List<String> patchNames) {
-        List<String> lines = initialLines;
-        for (String patchName : patchNames) {
-            lines = getLinesWithoutPatch(lines, patchName);
+        // First try stripping the outer managed block
+        List<String> lines = getLinesWithoutPatch(initialLines, MANAGED_PATCH_NAME);
+        // Fall back to stripping individual patches for backwards compatibility
+        if (lines.equals(initialLines)) {
+            for (String patchName : patchNames) {
+                lines = getLinesWithoutPatch(lines, patchName);
+            }
         }
+        return lines;
+    }
+
+    static List<String> wrapInManagedBlock(List<String> patchLines) {
+        List<String> lines = new ArrayList<>(patchLines.size() + 2);
+        lines.add(patchHeader(MANAGED_PATCH_NAME));
+        lines.addAll(patchLines);
+        lines.add(patchFooter(MANAGED_PATCH_NAME));
         return lines;
     }
 
