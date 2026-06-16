@@ -20,13 +20,16 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.graph.Graph;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
-import java.util.ArrayDeque;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Resolves patch ordering using topological sort (Kahn's algorithm) over a Guava directed graph.
@@ -59,7 +62,13 @@ final class PatchOrderResolver {
         graph.nodes()
                 .forEach(node -> inDegree.put(node, graph.predecessors(node).size()));
 
-        Queue<String> queue = enqueueRootNodes(inDegree);
+        // Build a registration-order index for deterministic tie-breaking
+        Map<String, Integer> registrationOrder = IntStream.range(0, patches.size())
+                .boxed()
+                .collect(Collectors.toMap(i -> patches.get(i).getId().get(), i -> i));
+        Comparator<String> byRegistrationOrder = Comparator.comparingInt(registrationOrder::get);
+
+        Queue<String> queue = enqueueRootNodes(inDegree, byRegistrationOrder);
         ImmutableList.Builder<PatchDeclaration> sorted = ImmutableList.builder();
         while (!queue.isEmpty()) {
             String current = queue.poll();
@@ -110,8 +119,8 @@ final class PatchOrderResolver {
         return graph;
     }
 
-    private static Queue<String> enqueueRootNodes(Map<String, Integer> degreeByNode) {
-        Queue<String> queue = new ArrayDeque<>();
+    private static Queue<String> enqueueRootNodes(Map<String, Integer> degreeByNode, Comparator<String> tieBreaker) {
+        Queue<String> queue = new PriorityQueue<>(tieBreaker);
         degreeByNode.entrySet().stream()
                 .filter(entry -> entry.getValue() == 0)
                 .forEach(entry -> queue.add(entry.getKey()));

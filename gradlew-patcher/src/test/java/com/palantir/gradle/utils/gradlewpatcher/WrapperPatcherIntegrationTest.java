@@ -134,12 +134,13 @@ class WrapperPatcherIntegrationTest {
                 .file("gradlew")
                 .assertThat()
                 .content()
-                .contains("# >>> Patch A >>>")
-                .contains("# <<< Patch A <<<")
-                .contains("# >>> Patch B >>>")
-                .contains("# <<< Patch B <<<")
-                .contains(PATCH_HEADER)
-                .contains(PATCH_FOOTER);
+                .containsSubsequence(
+                        PATCH_HEADER,
+                        PATCH_FOOTER,
+                        "# >>> Patch A >>>",
+                        "# <<< Patch A <<<",
+                        "# >>> Patch B >>>",
+                        "# <<< Patch B <<<");
 
         gradle.withArgs("checkGradlewWrapper").buildsSuccessfully();
     }
@@ -169,8 +170,12 @@ class WrapperPatcherIntegrationTest {
                 .assertThat()
                 .content()
                 .containsSubsequence(
-                        "# >>> Patch A >>>", "# <<< Patch A <<<",
-                        "# >>> Patch B >>>", "# <<< Patch B <<<");
+                        PATCH_HEADER,
+                        PATCH_FOOTER,
+                        "# >>> Patch A >>>",
+                        "# <<< Patch A <<<",
+                        "# >>> Patch B >>>",
+                        "# <<< Patch B <<<");
     }
 
     @Test
