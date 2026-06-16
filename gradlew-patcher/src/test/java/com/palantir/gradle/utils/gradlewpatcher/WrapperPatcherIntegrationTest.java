@@ -174,6 +174,92 @@ class WrapperPatcherIntegrationTest {
     }
 
     @Test
+    void new_patch_registered_after_existing_patch_already_applied(GradleInvoker gradle, RootProject rootProject) {
+        // First run: only the setup patch is applied
+        gradle.withArgs("wrapper").buildsSuccessfully();
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .contains(PATCH_HEADER)
+                .contains(PATCH_FOOTER)
+                .doesNotContain("# >>> New patch >>>");
+
+        // Register a new patch after the first one is already written to gradlew
+        rootProject.buildGradle().append("""
+            def newPatch = objects.newInstance(PatchDeclaration)
+            newPatch.id.set('new-patch')
+            newPatch.patchName.set('New patch')
+            newPatch.content.set('echo "new patch applied"')
+            newPatch.mustRunAfter.set(['test-patch'])
+            wrapperPatches.patches.add(newPatch)
+            """);
+
+        // Second run: both patches should be present, new patch after the original
+        gradle.withArgs("patchWrapper").buildsSuccessfully();
+
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .containsOnlyOnce(PATCH_HEADER)
+                .containsOnlyOnce(PATCH_FOOTER)
+                .containsOnlyOnce("# >>> New patch >>>")
+                .containsOnlyOnce("# <<< New patch <<<")
+                .containsSubsequence(
+                        PATCH_HEADER,
+                        PATCH_FOOTER,
+                        "# >>> New patch >>>",
+                        "echo \"new patch applied\"",
+                        "# <<< New patch <<<");
+
+        gradle.withArgs("checkGradlewWrapper").buildsSuccessfully();
+    }
+
+    @Test
+    void new_patch_registered_before_existing_patch_already_applied(GradleInvoker gradle, RootProject rootProject) {
+        // First run: only the setup patch is applied
+        gradle.withArgs("wrapper").buildsSuccessfully();
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .contains(PATCH_HEADER)
+                .contains(PATCH_FOOTER)
+                .doesNotContain("# >>> New patch >>>");
+
+        // Register a new patch that must run before the existing one
+        rootProject.buildGradle().append("""
+            def newPatch = objects.newInstance(PatchDeclaration)
+            newPatch.id.set('new-patch')
+            newPatch.patchName.set('New patch')
+            newPatch.content.set('echo "new patch applied"')
+            newPatch.mustRunBefore.set(['test-patch'])
+            wrapperPatches.patches.add(newPatch)
+            """);
+
+        // Second run: both patches should be present, new patch before the original
+        gradle.withArgs("patchWrapper").buildsSuccessfully();
+
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .containsOnlyOnce(PATCH_HEADER)
+                .containsOnlyOnce(PATCH_FOOTER)
+                .containsOnlyOnce("# >>> New patch >>>")
+                .containsOnlyOnce("# <<< New patch <<<")
+                .containsSubsequence(
+                        "# >>> New patch >>>",
+                        "echo \"new patch applied\"",
+                        "# <<< New patch <<<",
+                        PATCH_HEADER,
+                        PATCH_FOOTER);
+
+        gradle.withArgs("checkGradlewWrapper").buildsSuccessfully();
+    }
+
+    @Test
     void patch_task_is_eventually_up_to_date(GradleInvoker gradle) {
         gradle.withArgs("wrapper").buildsSuccessfully();
 
