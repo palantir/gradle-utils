@@ -69,6 +69,9 @@ public abstract class WrapperPatcherTask extends DefaultTask {
 
     @TaskAction
     public final void action() {
+        if (getOrderedPatchNames().get().isEmpty()) {
+            return;
+        }
         if (getGenerate().get()) {
             log.lifecycle("Patching the gradle wrapper files.");
             patchGradlewContent();
@@ -86,10 +89,6 @@ public abstract class WrapperPatcherTask extends DefaultTask {
 
         // Strip all existing patches
         lines = WrapperPatchHelper.getLinesWithoutPatches(lines, patchNames);
-
-        if (patchNames.isEmpty()) {
-            return;
-        }
 
         // Find insertion point
         int insertIndex = getInsertLineIndex(lines);
