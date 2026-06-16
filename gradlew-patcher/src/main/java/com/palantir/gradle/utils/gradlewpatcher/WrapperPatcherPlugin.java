@@ -16,9 +16,9 @@
 
 package com.palantir.gradle.utils.gradlewpatcher;
 
-import java.util.stream.Collectors;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
+import org.gradle.api.model.ObjectFactory;
 import org.gradle.api.tasks.TaskProvider;
 import org.gradle.api.tasks.wrapper.Wrapper;
 import org.gradle.language.base.plugins.LifecycleBasePlugin;
@@ -60,18 +60,19 @@ public abstract class WrapperPatcherPlugin implements Plugin<Project> {
             WrapperPatcherExtension extension,
             TaskProvider<WrapperPatcherTask> taskProvider,
             TaskProvider<Wrapper> wrapperTask) {
+        ObjectFactory objects = project.getObjects();
         taskProvider.configure(task -> {
-            task.getOrderedPatchNames()
+            task.getOrderedPatches()
                     .set(project.provider(() -> PatchOrderResolver.resolve(
                                     extension.getPatches().get())
                             .stream()
-                            .map(p -> p.getPatchName().get())
+                            .map(patch -> {
+                                OrderedPatch ordered = objects.newInstance(OrderedPatch.class);
+                                ordered.getName().set(patch.getPatchName().get());
+                                ordered.getContent().set(patch.getContent().get());
+                                return ordered;
+                            })
                             .toList()));
-            task.getPatchContents()
-                    .set(project.provider(() -> extension.getPatches().get().stream()
-                            .collect(Collectors.toMap(
-                                    p -> p.getPatchName().get(),
-                                    p -> p.getContent().get()))));
             task.getOriginalGradlewScript()
                     .fileProvider(project.provider(() -> wrapperTask.get().getScriptFile()));
             task.getPatchedGradlewScript()

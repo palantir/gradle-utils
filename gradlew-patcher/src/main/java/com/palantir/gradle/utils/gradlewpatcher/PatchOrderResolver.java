@@ -90,7 +90,7 @@ final class PatchOrderResolver {
         List<PatchDeclaration> sortedPatches = sorted.build();
         if (sortedPatches.size() != patches.size()) {
             List<String> cycleNodes = inDegree.entrySet().stream()
-                    .filter(e -> e.getValue() > 0)
+                    .filter(entry -> entry.getValue() > 0)
                     .map(Map.Entry::getKey)
                     .sorted()
                     .toList();

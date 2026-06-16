@@ -18,7 +18,6 @@ package com.palantir.gradle.utils.gradlewpatcher;
 
 import java.io.File;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.stream.IntStream;
 import org.gradle.api.DefaultTask;
@@ -26,10 +25,10 @@ import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.logging.Logger;
 import org.gradle.api.logging.Logging;
 import org.gradle.api.provider.ListProperty;
-import org.gradle.api.provider.MapProperty;
 import org.gradle.api.provider.Property;
 import org.gradle.api.tasks.Input;
 import org.gradle.api.tasks.InputFile;
+import org.gradle.api.tasks.Nested;
 import org.gradle.api.tasks.OutputFile;
 import org.gradle.api.tasks.TaskAction;
 
@@ -45,13 +44,9 @@ public abstract class WrapperPatcherTask extends DefaultTask {
     private static final Logger log = Logging.getLogger(WrapperPatcherTask.class);
     private static final String COMMENT_BLOCK = "###";
 
-    /** Patch names in topologically sorted order. */
-    @Input
-    public abstract ListProperty<String> getOrderedPatchNames();
-
-    /** Mapping from patch name to patch content (without header/footer markers). */
-    @Input
-    public abstract MapProperty<String, String> getPatchContents();
+    /** Patches in topologically sorted order. */
+    @Nested
+    public abstract ListProperty<OrderedPatch> getOrderedPatches();
 
     @Input
     public abstract Property<Boolean> getGenerate();
@@ -77,16 +72,18 @@ public abstract class WrapperPatcherTask extends DefaultTask {
     }
 
     private void patchGradlewContent() {
-        List<String> patchNames = getOrderedPatchNames().get();
-        Map<String, String> contents = getPatchContents().get();
+        List<OrderedPatch> patches = getOrderedPatches().get();
 
         File originalGradlewScript = getOriginalGradlewScript().getAsFile().get();
         List<String> lines = WrapperPatchHelper.readAllLines(originalGradlewScript.toPath());
 
+        List<String> patchNames =
+                patches.stream().map(patch -> patch.getName().get()).toList();
+
         // Strip all existing patches (including stale managed block)
         lines = WrapperPatchHelper.getLinesWithoutPatches(lines, patchNames);
 
-        if (patchNames.isEmpty()) {
+        if (patches.isEmpty()) {
             WrapperPatchHelper.writeContent(
                     getPatchedGradlewScript().getAsFile().get().toPath(), lines);
             return;
@@ -95,8 +92,11 @@ public abstract class WrapperPatcherTask extends DefaultTask {
         // Find insertion point
         int insertIndex = getInsertLineIndex(lines);
 
-        List<String> allPatchLines = patchNames.stream()
-                .flatMap(name -> WrapperPatchHelper.getPatchLinesWithHeader(contents.get(name), name).stream())
+        List<String> allPatchLines = patches.stream()
+                .flatMap(patch ->
+                        WrapperPatchHelper.getPatchLinesWithHeader(
+                                patch.getContent().get(), patch.getName().get())
+                                .stream())
                 .toList();
         List<String> managedBlock = WrapperPatchHelper.wrapInManagedBlock(allPatchLines);
 
@@ -105,21 +105,23 @@ public abstract class WrapperPatcherTask extends DefaultTask {
     }
 
     private void checkContainsPatches() {
-        List<String> patchNames = getOrderedPatchNames().get();
-        Map<String, String> contents = getPatchContents().get();
+        List<OrderedPatch> patches = getOrderedPatches().get();
 
         File gradlewFile = getOriginalGradlewScript().get().getAsFile();
         List<String> lines = WrapperPatchHelper.readAllLines(gradlewFile.toPath());
 
-        List<String> expectedPatchLines = patchNames.stream()
-                .flatMap(name -> WrapperPatchHelper.getPatchLinesWithHeader(contents.get(name), name).stream())
+        List<String> expectedPatchLines = patches.stream()
+                .flatMap(patch ->
+                        WrapperPatchHelper.getPatchLinesWithHeader(
+                                patch.getContent().get(), patch.getName().get())
+                                .stream())
                 .toList();
         List<String> expectedBlock = WrapperPatchHelper.wrapInManagedBlock(expectedPatchLines);
 
         Optional<WrapperPatchHelper.PatchLineNumbers> managedRange =
                 WrapperPatchHelper.getPatchLineNumbers(lines, WrapperPatchHelper.MANAGED_PATCH_NAME);
 
-        if (managedRange.isEmpty() && patchNames.isEmpty()) {
+        if (managedRange.isEmpty() && patches.isEmpty()) {
             return;
         }
         if (managedRange.isEmpty()) {
