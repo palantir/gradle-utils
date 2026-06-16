@@ -25,7 +25,7 @@ public abstract class PatchDeclaration {
     /** Unique identifier for this patch, used in ordering constraints ({@code mustRunAfter}/{@code mustRunBefore}). */
     public abstract Property<String> getId();
 
-    /** Human-readable name used for header/footer markers in the gradlew script. Defaults to the id. */
+    /** Human-readable name used for header/footer markers in the gradlew script. */
     public abstract Property<String> getPatchName();
 
     /** Shell script lines to insert between the header and footer markers. */

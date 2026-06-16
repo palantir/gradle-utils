@@ -44,7 +44,6 @@ public abstract class WrapperPatcherTask extends DefaultTask {
 
     private static final Logger log = Logging.getLogger(WrapperPatcherTask.class);
     private static final String COMMENT_BLOCK = "###";
-    private static final String SHEBANG = "#!";
 
     /** Patch names in topologically sorted order. */
     @Input
@@ -69,9 +68,6 @@ public abstract class WrapperPatcherTask extends DefaultTask {
 
     @TaskAction
     public final void action() {
-        if (getOrderedPatchNames().get().isEmpty()) {
-            return;
-        }
         if (getGenerate().get()) {
             log.lifecycle("Patching the gradle wrapper files.");
             patchGradlewContent();
@@ -87,8 +83,14 @@ public abstract class WrapperPatcherTask extends DefaultTask {
         File originalGradlewScript = getOriginalGradlewScript().getAsFile().get();
         List<String> lines = WrapperPatchHelper.readAllLines(originalGradlewScript.toPath());
 
-        // Strip all existing patches
+        // Strip all existing patches (including stale managed block)
         lines = WrapperPatchHelper.getLinesWithoutPatches(lines, patchNames);
+
+        if (patchNames.isEmpty()) {
+            WrapperPatchHelper.writeContent(
+                    getPatchedGradlewScript().getAsFile().get().toPath(), lines);
+            return;
+        }
 
         // Find insertion point
         int insertIndex = getInsertLineIndex(lines);
@@ -117,6 +119,9 @@ public abstract class WrapperPatcherTask extends DefaultTask {
         Optional<WrapperPatchHelper.PatchLineNumbers> managedRange =
                 WrapperPatchHelper.getPatchLineNumbers(lines, WrapperPatchHelper.MANAGED_PATCH_NAME);
 
+        if (managedRange.isEmpty() && patchNames.isEmpty()) {
+            return;
+        }
         if (managedRange.isEmpty()) {
             throw new IllegalStateException("""
                 Gradle Wrapper script is out of date: managed patches block is missing.
@@ -137,7 +142,6 @@ public abstract class WrapperPatcherTask extends DefaultTask {
 
     /**
      * gradlew contains a comment block that explains how it works. We are trying to add the patch block after it.
-     * The fallback is adding the patch block directly after the shebang line.
      */
     private static int getInsertLineIndex(List<String> lines) {
         List<Integer> explanationBlock = IntStream.range(0, lines.size())
@@ -147,11 +151,6 @@ public abstract class WrapperPatcherTask extends DefaultTask {
                 .toList();
         if (explanationBlock.size() == 2 && explanationBlock.get(0) < explanationBlock.get(1)) {
             return explanationBlock.get(1) + 1;
-        }
-
-        int shebangLine = lines.indexOf(SHEBANG);
-        if (shebangLine != -1) {
-            return shebangLine + 1;
         }
 
         throw new IllegalStateException("Unable to find where to patch the gradlew file, aborting...");

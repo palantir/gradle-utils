@@ -57,6 +57,10 @@ final class WrapperPatchHelper {
         }
     }
 
+    static void writeContent(Path outputPath, List<String> lines) {
+        writeContentWithPatch(outputPath, lines, List.of(), 0);
+    }
+
     static void writeContentWithPatch(
             Path outputPath, List<String> initialLines, List<String> patchLines, int insertIndex) {
         try {
@@ -111,7 +115,7 @@ final class WrapperPatchHelper {
         newLines.addAll(initialLines.subList(0, insertIndex));
         newLines.addAll(patchLines);
         newLines.addAll(initialLines.subList(insertIndex, initialLines.size()));
-        return newLines.stream().collect(Collectors.joining(System.lineSeparator()));
+        return newLines.stream().collect(Collectors.joining("\n"));
     }
 
     static List<String> getLinesWithoutPatches(List<String> initialLines, List<String> patchNames) {

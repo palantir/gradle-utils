@@ -382,6 +382,47 @@ class WrapperPatcherIntegrationTest {
     }
 
     @Test
+    void removing_all_patches_cleans_up_managed_block(GradleInvoker gradle, RootProject rootProject) {
+        // Register a patch and apply it
+        rootProject.buildGradle().append("""
+            import com.palantir.gradle.utils.gradlewpatcher.PatchDeclaration
+
+            def tempPatch = objects.newInstance(PatchDeclaration)
+            tempPatch.id.set('temp-patch')
+            tempPatch.patchName.set('Temp patch')
+            tempPatch.content.set('echo "temporary"')
+            wrapperPatches.patches.add(tempPatch)
+            """);
+
+        gradle.withArgs("wrapper").buildsSuccessfully();
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .contains(MANAGED_HEADER)
+                .contains(MANAGED_FOOTER);
+
+        // Remove the patch declaration from build.gradle
+        rootProject
+                .file("build.gradle")
+                .edit(content ->
+                        content.replaceAll("(?s)def tempPatch.*?wrapperPatches\\.patches\\.add\\(tempPatch\\)\\n", ""));
+
+        // Re-running should strip the stale managed block
+        gradle.withArgs("patchGradlewWrapper").buildsSuccessfully();
+
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .doesNotContain(MANAGED_HEADER)
+                .doesNotContain(MANAGED_FOOTER)
+                .doesNotContain("echo \"temporary\"");
+
+        gradle.withArgs("checkGradlewWrapper").buildsSuccessfully();
+    }
+
+    @Test
     void no_patches_does_not_write_managed_block(GradleInvoker gradle, RootProject rootProject) {
         gradle.withArgs("wrapper").buildsSuccessfully();
 
