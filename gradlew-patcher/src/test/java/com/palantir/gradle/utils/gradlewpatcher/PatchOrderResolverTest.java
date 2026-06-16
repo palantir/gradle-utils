@@ -131,6 +131,19 @@ class PatchOrderResolverTest {
     }
 
     @Test
+    void reserved_patch_name_throws() {
+        PatchDeclaration patch = objects.newInstance(PatchDeclaration.class);
+        patch.getId().set("bad");
+        patch.getPatchName().set(WrapperPatchHelper.MANAGED_PATCH_NAME);
+        patch.getContent().set("echo bad");
+
+        assertThatThrownBy(() -> PatchOrderResolver.resolve(List.of(patch)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("reserved patchName")
+                .hasMessageContaining(WrapperPatchHelper.MANAGED_PATCH_NAME);
+    }
+
+    @Test
     void duplicate_patch_name_throws() {
         PatchDeclaration a1 = patch("A");
         PatchDeclaration a2 = patch("A");

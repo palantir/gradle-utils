@@ -51,8 +51,13 @@ final class PatchOrderResolver {
         Map<String, PatchDeclaration> byId = new LinkedHashMap<>();
         for (PatchDeclaration patch : patches) {
             String id = patch.getId().get();
+            String patchName = patch.getPatchName().get();
             if (byId.containsKey(id)) {
                 throw new IllegalStateException(String.format("Duplicate patch id '%s'", id));
+            }
+            if (patchName.equals(WrapperPatchHelper.MANAGED_PATCH_NAME)) {
+                throw new IllegalStateException(String.format(
+                        "Patch '%s' uses reserved patchName '%s'", id, WrapperPatchHelper.MANAGED_PATCH_NAME));
             }
             byId.put(id, patch);
         }
