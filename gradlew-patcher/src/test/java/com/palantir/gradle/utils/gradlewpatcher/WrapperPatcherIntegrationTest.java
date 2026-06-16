@@ -93,8 +93,7 @@ class WrapperPatcherIntegrationTest {
 
         rootProject
                 .file("gradlew")
-                .edit(content ->
-                        content.replaceAll("(?s)" + MANAGED_HEADER + ".*?" + MANAGED_FOOTER + "\\n", ""));
+                .edit(content -> content.replaceAll("(?s)" + MANAGED_HEADER + ".*?" + MANAGED_FOOTER + "\\n", ""));
 
         InvocationResult result = gradle.withArgs("checkGradlewWrapper").buildsWithFailure();
         rootProject
@@ -289,9 +288,9 @@ class WrapperPatcherIntegrationTest {
         gradle.withArgs("wrapper").buildsSuccessfully();
 
         // Simulate a legacy gradlew by stripping the managed header/footer but keeping the inner patch
-        rootProject.file("gradlew").edit(content -> content
-                .replace(MANAGED_HEADER + "\n", "")
-                .replace(MANAGED_FOOTER + "\n", ""));
+        rootProject
+                .file("gradlew")
+                .edit(content -> content.replace(MANAGED_HEADER + "\n", "").replace(MANAGED_FOOTER + "\n", ""));
 
         rootProject
                 .file("gradlew")
@@ -322,9 +321,10 @@ class WrapperPatcherIntegrationTest {
         gradle.withArgs("wrapper").buildsSuccessfully();
 
         // Simulate a previously-registered patch inside the managed block that is no longer declared
-        rootProject.file("gradlew").edit(content -> content.replace(
-                PATCH_HEADER,
-                "# >>> Old patch >>>\necho \"old stuff\"\n# <<< Old patch <<<\n" + PATCH_HEADER));
+        rootProject
+                .file("gradlew")
+                .edit(content -> content.replace(
+                        PATCH_HEADER, "# >>> Old patch >>>\necho \"old stuff\"\n# <<< Old patch <<<\n" + PATCH_HEADER));
 
         rootProject
                 .file("gradlew")
@@ -353,8 +353,10 @@ class WrapperPatcherIntegrationTest {
     @Test
     void no_patches_does_not_write_managed_block(GradleInvoker gradle, RootProject rootProject) {
         // Remove the patch registered in setup so there are no patches
-        rootProject.file("build.gradle").edit(content ->
-                content.replaceAll("(?s)def testPatch.*?wrapperPatches\\.patches\\.add\\(testPatch\\)\\n", ""));
+        rootProject
+                .file("build.gradle")
+                .edit(content ->
+                        content.replaceAll("(?s)def testPatch.*?wrapperPatches\\.patches\\.add\\(testPatch\\)\\n", ""));
 
         gradle.withArgs("wrapper").buildsSuccessfully();
 
