@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.utils.gradlewpatcher;
 
+import com.palantir.gradle.failurereports.exceptions.ExceptionWithSuggestion;
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
@@ -125,20 +126,20 @@ public abstract class WrapperPatcherTask extends DefaultTask {
             return;
         }
         if (managedRange.isEmpty()) {
-            throw new IllegalStateException("""
+            throw new ExceptionWithSuggestion("""
                 Gradle Wrapper script is out of date: managed patches block is missing.
                 Please run `./gradlew patchGradlewWrapper` to fix.
-                """);
+                """, "./gradlew patchGradlewWrapper");
         }
 
         WrapperPatchHelper.PatchLineNumbers range = managedRange.get();
         List<String> actualBlock = lines.subList(range.startIndex(), range.endIndex() + 1);
 
         if (!actualBlock.equals(expectedBlock)) {
-            throw new IllegalStateException("""
+            throw new ExceptionWithSuggestion("""
                 Gradle Wrapper script is out of date: managed patches block does not match expected content.
                 Please run `./gradlew patchGradlewWrapper` to fix.
-                """);
+                """, "./gradlew patchGradlewWrapper");
         }
     }
 

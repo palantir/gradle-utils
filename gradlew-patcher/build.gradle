@@ -14,9 +14,11 @@ gradlePlugin {
 
 dependencies {
     annotationProcessor 'org.immutables:value'
+    compileOnly 'org.immutables:value::annotations'
+
     implementation gradleApi()
     implementation 'com.google.guava:guava'
-    compileOnly 'org.immutables:value::annotations'
+    implementation 'com.palantir.gradle.failure-reports:gradle-failure-reports-exceptions'
 
     testImplementation 'org.junit.jupiter:junit-jupiter'
     testImplementation 'org.assertj:assertj-core'

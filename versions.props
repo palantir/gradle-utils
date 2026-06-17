@@ -6,6 +6,7 @@ org.junit.jupiter:* = 6.1.0
 org.assertj:assertj-core = 3.27.7
 com.netflix.nebula:nebula-test = 10.6.2
 org.immutables:* = 2.12.2
+com.palantir.gradle.failure-reports:* = 1.19.0
 
 # conflict resolution
 com.google.code.findbugs:jsr305 = 3.0.2

@@ -28,6 +28,9 @@ public abstract class WrapperPatcherPlugin implements Plugin<Project> {
 
     @Override
     public final void apply(Project project) {
+        if (project.getRootProject() != project) {
+            throw new IllegalArgumentException("com.palantir.gradlew-patcher must be applied to the root project only");
+        }
         WrapperPatcherExtension extension =
                 project.getExtensions().create("wrapperPatches", WrapperPatcherExtension.class);
 
