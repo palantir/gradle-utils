@@ -76,15 +76,15 @@ class CircleCiArtifactsTest {
 
         rootProject
                 .gradlePropertiesFile()
-                .appendProperty("__TESTING", "true")
-                .appendProperty("__TESTING_CI", "true")
-                .appendProperty("__TESTING_CIRCLE_ARTIFACTS", relativePath)
-                .appendProperty("__TESTING_CIRCLE_PROJECT_USERNAME", "palantir")
-                .appendProperty("__TESTING_CIRCLE_PROJECT_REPONAME", "gradle-utils")
-                .appendProperty("__TESTING_CIRCLE_BUILD_NUM", "1234")
-                .appendProperty("__TESTING_CIRCLE_NODE_INDEX", "2345")
-                .appendProperty("__TESTING_CIRCLE_BUILD_URL", "https://circleci.com/gh/palantir/gradle-utils/1234")
-                .appendProperty("__TESTING_CIRCLE_WORKFLOW_JOB_ID", "abc-123-def-456");
+                .setProperty("__TESTING", "true")
+                .setProperty("__TESTING_CI", "true")
+                .setProperty("__TESTING_CIRCLE_ARTIFACTS", relativePath)
+                .setProperty("__TESTING_CIRCLE_PROJECT_USERNAME", "palantir")
+                .setProperty("__TESTING_CIRCLE_PROJECT_REPONAME", "gradle-utils")
+                .setProperty("__TESTING_CIRCLE_BUILD_NUM", "1234")
+                .setProperty("__TESTING_CIRCLE_NODE_INDEX", "2345")
+                .setProperty("__TESTING_CIRCLE_BUILD_URL", "https://circleci.com/gh/palantir/gradle-utils/1234")
+                .setProperty("__TESTING_CIRCLE_WORKFLOW_JOB_ID", "abc-123-def-456");
 
         InvocationResult result = gradle.withArgs("printCircleCiLocation").buildsSuccessfully();
 
@@ -99,7 +99,7 @@ class CircleCiArtifactsTest {
 
     @Test
     void empty_property_if_were_not_in_circle(GradleInvoker gradle, RootProject rootProject) {
-        rootProject.gradlePropertiesFile().appendProperty("__TESTING", "true");
+        rootProject.gradlePropertiesFile().setProperty("__TESTING", "true");
 
         InvocationResult result = gradle.withArgs("printCircleCiLocation").buildsSuccessfully();
 
@@ -118,14 +118,14 @@ class CircleCiArtifactsTest {
 
         rootProject
                 .gradlePropertiesFile()
-                .appendProperty("__TESTING", "true")
-                .appendProperty("__TESTING_CI", "true")
-                .appendProperty("__TESTING_CIRCLE_ARTIFACTS", relativePath)
-                .appendProperty("__TESTING_CIRCLE_PROJECT_USERNAME", "palantir")
-                .appendProperty("__TESTING_CIRCLE_PROJECT_REPONAME", "gradle-utils")
-                .appendProperty("__TESTING_CIRCLE_BUILD_NUM", "1234")
-                .appendProperty("__TESTING_CIRCLE_NODE_INDEX", "2345")
-                .appendProperty("__TESTING_CIRCLE_WORKFLOW_JOB_ID", "abc-123-def-456");
+                .setProperty("__TESTING", "true")
+                .setProperty("__TESTING_CI", "true")
+                .setProperty("__TESTING_CIRCLE_ARTIFACTS", relativePath)
+                .setProperty("__TESTING_CIRCLE_PROJECT_USERNAME", "palantir")
+                .setProperty("__TESTING_CIRCLE_PROJECT_REPONAME", "gradle-utils")
+                .setProperty("__TESTING_CIRCLE_BUILD_NUM", "1234")
+                .setProperty("__TESTING_CIRCLE_NODE_INDEX", "2345")
+                .setProperty("__TESTING_CIRCLE_WORKFLOW_JOB_ID", "abc-123-def-456");
 
         InvocationResult result = gradle.withArgs("printCircleCiLocation").buildsSuccessfully();
 
@@ -144,16 +144,16 @@ class CircleCiArtifactsTest {
 
         rootProject
                 .gradlePropertiesFile()
-                .appendProperty("__TESTING", "true")
-                .appendProperty("__TESTING_CI", "true")
-                .appendProperty("__TESTING_CIRCLE_ARTIFACTS", customHome + "circle-artifacts")
-                .appendProperty("__TESTING_CIRCLE_PROJECT_USERNAME", "palantir")
-                .appendProperty("__TESTING_CIRCLE_PROJECT_REPONAME", "gradle-utils")
-                .appendProperty("__TESTING_CIRCLE_BUILD_NUM", "1234")
-                .appendProperty("__TESTING_CIRCLE_NODE_INDEX", "2345")
-                .appendProperty("__TESTING_CIRCLE_BUILD_URL", "https://circleci.com/gh/palantir/gradle-utils/1234")
-                .appendProperty("__TESTING_CIRCLE_WORKFLOW_JOB_ID", "abc-123-def-456")
-                .appendProperty("__TESTING_CIRCLE_HOME_DIRECTORY", customHome);
+                .setProperty("__TESTING", "true")
+                .setProperty("__TESTING_CI", "true")
+                .setProperty("__TESTING_CIRCLE_ARTIFACTS", customHome + "circle-artifacts")
+                .setProperty("__TESTING_CIRCLE_PROJECT_USERNAME", "palantir")
+                .setProperty("__TESTING_CIRCLE_PROJECT_REPONAME", "gradle-utils")
+                .setProperty("__TESTING_CIRCLE_BUILD_NUM", "1234")
+                .setProperty("__TESTING_CIRCLE_NODE_INDEX", "2345")
+                .setProperty("__TESTING_CIRCLE_BUILD_URL", "https://circleci.com/gh/palantir/gradle-utils/1234")
+                .setProperty("__TESTING_CIRCLE_WORKFLOW_JOB_ID", "abc-123-def-456")
+                .setProperty("__TESTING_CIRCLE_HOME_DIRECTORY", customHome);
 
         InvocationResult result = gradle.withArgs("printCircleCiLocation").buildsSuccessfully();
 

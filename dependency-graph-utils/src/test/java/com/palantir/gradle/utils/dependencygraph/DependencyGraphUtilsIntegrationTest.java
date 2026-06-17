@@ -93,8 +93,8 @@ class DependencyGraphUtilsIntegrationTest {
 
         rootProject
                 .propertiesFile("versions.props")
-                .appendProperty("com.google.guava:guava", "30.1.1-jre")
-                .appendProperty("com.palantir.conjure.java:*", "7.21.0");
+                .setProperty("com.google.guava:guava", "30.1.1-jre")
+                .setProperty("com.palantir.conjure.java:*", "7.21.0");
 
         rootProject.file("versions.lock").createEmpty();
     }
