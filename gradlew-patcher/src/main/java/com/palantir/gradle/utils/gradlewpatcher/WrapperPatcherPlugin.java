@@ -73,6 +73,7 @@ public abstract class WrapperPatcherPlugin implements Plugin<Project> {
                                 return ordered;
                             })
                             .toList()));
+            // wrapped in provider to avoid an implicit task dependency on wrapperTask
             task.getOriginalGradlewScript()
                     .fileProvider(project.provider(() -> wrapperTask.get().getScriptFile()));
             task.getPatchedGradlewScript()
