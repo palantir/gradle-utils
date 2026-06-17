@@ -31,9 +31,15 @@ public abstract class PatchDeclaration {
     /** Shell script lines to insert between the header and footer markers. */
     public abstract Property<String> getContent();
 
-    /** Patch IDs that this patch must run after. */
+    /**
+     * Patch IDs that this patch must run after. Useful when this patch depends on another patch being applied first.
+     * References to unknown IDs are ignored with a warning.
+     */
     public abstract ListProperty<String> getMustRunAfter();
 
-    /** Patch IDs that this patch must run before. */
+    /**
+     * Patch IDs that this patch must run before. Useful when another patch depends on this one being applied first.
+     * References to unknown IDs are ignored with a warning.
+     */
     public abstract ListProperty<String> getMustRunBefore();
 }

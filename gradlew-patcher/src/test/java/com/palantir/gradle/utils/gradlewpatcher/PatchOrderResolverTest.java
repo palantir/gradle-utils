@@ -111,23 +111,19 @@ class PatchOrderResolverTest {
     }
 
     @Test
-    void unknown_reference_in_must_run_after_throws() {
+    void unknown_reference_in_must_run_after_is_ignored() {
         PatchDeclaration patchA = patch("A");
         patchA.getMustRunAfter().set(List.of("nonexistent"));
 
-        assertThatThrownBy(() -> PatchOrderResolver.resolve(List.of(patchA)))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("unknown patch 'nonexistent'");
+        assertThat(resolveIds(List.of(patchA))).containsExactly("A");
     }
 
     @Test
-    void unknown_reference_in_must_run_before_throws() {
+    void unknown_reference_in_must_run_before_is_ignored() {
         PatchDeclaration patchA = patch("A");
         patchA.getMustRunBefore().set(List.of("nonexistent"));
 
-        assertThatThrownBy(() -> PatchOrderResolver.resolve(List.of(patchA)))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("unknown patch 'nonexistent'");
+        assertThat(resolveIds(List.of(patchA))).containsExactly("A");
     }
 
     @Test
@@ -144,13 +140,24 @@ class PatchOrderResolverTest {
     }
 
     @Test
-    void duplicate_patch_name_throws() {
+    void duplicate_patch_id_throws() {
         PatchDeclaration a1 = patch("A");
         PatchDeclaration a2 = patch("A");
 
         assertThatThrownBy(() -> PatchOrderResolver.resolve(List.of(a1, a2)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Duplicate patch id 'A'");
+    }
+
+    @Test
+    void duplicate_patch_name_throws() {
+        PatchDeclaration patchA = patch("A");
+        PatchDeclaration patchB = patch("B");
+        patchB.getPatchName().set("A");
+
+        assertThatThrownBy(() -> PatchOrderResolver.resolve(List.of(patchA, patchB)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Duplicate patchName 'A'");
     }
 
     private PatchDeclaration patch(String id) {
@@ -163,7 +170,7 @@ class PatchOrderResolverTest {
 
     private List<String> resolveIds(List<PatchDeclaration> patches) {
         return PatchOrderResolver.resolve(patches).stream()
-                .map(p -> p.getId().get())
+                .map(patch -> patch.getId().get())
                 .toList();
     }
 }

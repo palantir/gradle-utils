@@ -17,19 +17,17 @@
 package com.palantir.gradle.utils.gradlewpatcher;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.graph.Graph;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
-import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
-import java.util.Queue;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.gradle.api.logging.Logger;
+import org.gradle.api.logging.Logging;
 
 /**
  * Resolves patch ordering using topological sort (Kahn's algorithm) over a Guava directed graph.
@@ -37,49 +35,39 @@ import java.util.stream.IntStream;
  */
 final class PatchOrderResolver {
 
+    private static final Logger log = Logging.getLogger(PatchOrderResolver.class);
+
     /**
      * Returns the given patches in an order consistent with their {@code mustRunAfter} and {@code mustRunBefore}
      * constraints. Patches without constraints are ordered by their registration order (list index).
+     * References to unknown patch ids are logged as warnings and ignored.
      *
-     * @throws IllegalStateException if a cycle is detected or an unknown patch id is referenced
+     * @throws IllegalStateException if a cycle is detected, duplicate ids/patchNames exist, or a reserved name is used
      */
     static List<PatchDeclaration> resolve(List<PatchDeclaration> patches) {
         if (patches.isEmpty()) {
             return List.of();
         }
 
-        Map<String, PatchDeclaration> byId = new LinkedHashMap<>();
-        for (PatchDeclaration patch : patches) {
-            String id = patch.getId().get();
-            String patchName = patch.getPatchName().get();
-            if (byId.containsKey(id)) {
-                throw new IllegalStateException(String.format("Duplicate patch id '%s'", id));
-            }
-            if (patchName.equals(WrapperPatchHelper.MANAGED_PATCH_NAME)) {
-                throw new IllegalStateException(String.format(
-                        "Patch '%s' uses reserved patchName '%s'", id, WrapperPatchHelper.MANAGED_PATCH_NAME));
-            }
-            byId.put(id, patch);
-        }
-        Graph<String> graph = buildGraph(patches, byId.keySet());
+        // id -> index; validates uniqueness and reserved names
+        Map<String, Integer> idToIndex = validateAndIndexPatches(patches);
 
-        Map<String, Integer> inDegree = new HashMap<>();
+        // Build directed graph over indices; natural ordering gives registration-order tie-breaking
+        MutableGraph<Integer> graph = buildGraph(patches, idToIndex);
+
+        Map<Integer, Integer> inDegree = new HashMap<>();
         graph.nodes()
                 .forEach(node -> inDegree.put(node, graph.predecessors(node).size()));
 
-        // Build a registration-order index for deterministic tie-breaking
-        Map<String, Integer> registrationOrder = IntStream.range(0, patches.size())
-                .boxed()
-                .collect(Collectors.toMap(i -> patches.get(i).getId().get(), i -> i));
-        Comparator<String> byRegistrationOrder = Comparator.comparingInt(registrationOrder::get);
+        PriorityQueue<Integer> queue = new PriorityQueue<>();
+        inDegree.entrySet().stream().filter(entry -> entry.getValue() == 0).forEach(entry -> queue.add(entry.getKey()));
 
-        Queue<String> queue = enqueueRootNodes(inDegree, byRegistrationOrder);
         ImmutableList.Builder<PatchDeclaration> sorted = ImmutableList.builder();
         while (!queue.isEmpty()) {
-            String current = queue.poll();
-            sorted.add(byId.get(current));
+            int current = queue.poll();
+            sorted.add(patches.get(current));
 
-            for (String successor : graph.successors(current)) {
+            for (int successor : graph.successors(current)) {
                 int newDegree = inDegree.merge(successor, -1, Integer::sum);
                 if (newDegree == 0) {
                     queue.add(successor);
@@ -91,7 +79,7 @@ final class PatchOrderResolver {
         if (sortedPatches.size() != patches.size()) {
             List<String> cycleNodes = inDegree.entrySet().stream()
                     .filter(entry -> entry.getValue() > 0)
-                    .map(Map.Entry::getKey)
+                    .map(entry -> patches.get(entry.getKey()).getId().get())
                     .sorted()
                     .toList();
             throw new IllegalStateException(String.format(
@@ -101,42 +89,62 @@ final class PatchOrderResolver {
         return sortedPatches;
     }
 
-    /** Builds a directed graph where an edge from A to B means A must come before B. */
-    private static Graph<String> buildGraph(List<PatchDeclaration> patches, Set<String> knownIds) {
-        MutableGraph<String> graph =
-                GraphBuilder.directed().allowsSelfLoops(false).build();
-        knownIds.forEach(graph::addNode);
+    /** Validates patch declarations and returns a map of id to list index. */
+    private static Map<String, Integer> validateAndIndexPatches(List<PatchDeclaration> patches) {
+        Map<String, Integer> idToIndex = new HashMap<>();
+        Set<String> seenPatchNames = new HashSet<>();
+        for (int i = 0; i < patches.size(); i++) {
+            String id = patches.get(i).getId().get();
+            String patchName = patches.get(i).getPatchName().get();
+            if (idToIndex.containsKey(id)) {
+                throw new IllegalStateException(String.format("Duplicate patch id '%s'", id));
+            }
+            if (!seenPatchNames.add(patchName)) {
+                throw new IllegalStateException(String.format("Duplicate patchName '%s'", patchName));
+            }
+            if (patchName.equals(WrapperPatchHelper.MANAGED_PATCH_NAME)) {
+                throw new IllegalStateException(String.format(
+                        "Patch '%s' uses reserved patchName '%s'", id, WrapperPatchHelper.MANAGED_PATCH_NAME));
+            }
+            idToIndex.put(id, i);
+        }
+        return idToIndex;
+    }
 
-        for (PatchDeclaration patch : patches) {
+    /** Builds a directed graph over list indices where an edge from i to j means patch i must come before patch j. */
+    private static MutableGraph<Integer> buildGraph(List<PatchDeclaration> patches, Map<String, Integer> idToIndex) {
+        MutableGraph<Integer> graph =
+                GraphBuilder.directed().allowsSelfLoops(false).build();
+        IntStream.range(0, patches.size()).forEach(graph::addNode);
+
+        for (int i = 0; i < patches.size(); i++) {
+            PatchDeclaration patch = patches.get(i);
             String id = patch.getId().get();
 
             for (String after : patch.getMustRunAfter().getOrElse(List.of())) {
-                validateReference(after, knownIds, id, "mustRunAfter");
-                graph.putEdge(after, id);
+                if (isKnownReference(after, idToIndex, id, "mustRunAfter")) {
+                    graph.putEdge(idToIndex.get(after), i);
+                }
             }
 
             for (String before : patch.getMustRunBefore().getOrElse(List.of())) {
-                validateReference(before, knownIds, id, "mustRunBefore");
-                graph.putEdge(id, before);
+                if (isKnownReference(before, idToIndex, id, "mustRunBefore")) {
+                    graph.putEdge(i, idToIndex.get(before));
+                }
             }
         }
 
         return graph;
     }
 
-    private static Queue<String> enqueueRootNodes(Map<String, Integer> degreeByNode, Comparator<String> tieBreaker) {
-        Queue<String> queue = new PriorityQueue<>(tieBreaker);
-        degreeByNode.entrySet().stream()
-                .filter(entry -> entry.getValue() == 0)
-                .forEach(entry -> queue.add(entry.getKey()));
-        return queue;
-    }
-
-    private static void validateReference(String referenced, Set<String> knownIds, String source, String field) {
-        if (!knownIds.contains(referenced)) {
-            throw new IllegalStateException(
-                    String.format("Patch '%s' references unknown patch '%s' in %s", source, referenced, field));
+    /** Returns true if the referenced patch exists; logs a warning and returns false otherwise. */
+    private static boolean isKnownReference(
+            String referenced, Map<String, Integer> idToIndex, String source, String field) {
+        if (idToIndex.containsKey(referenced)) {
+            return true;
         }
+        log.warn("Patch '{}' references unknown patch '{}' in {} — ignoring constraint", source, referenced, field);
+        return false;
     }
 
     private PatchOrderResolver() {}
