@@ -37,7 +37,7 @@ final class WrapperPatchHelper {
     static List<String> getLinesWithoutPatch(List<String> initialLines, String patchName) {
         Optional<PatchLineNumbers> patchLineRange = getPatchLineNumbers(initialLines, patchName);
         if (patchLineRange.isEmpty()) {
-            return new ArrayList<>(initialLines);
+            return initialLines;
         }
         int startIndex = patchLineRange.get().startIndex();
         int endIndex = patchLineRange.get().endIndex();
@@ -57,7 +57,7 @@ final class WrapperPatchHelper {
         }
     }
 
-    static void writeContent(Path outputPath, List<String> lines) {
+    static void writeContentWithoutPatches(Path outputPath, List<String> lines) {
         writeContentWithPatch(outputPath, lines, List.of(), 0);
     }
 

@@ -84,7 +84,7 @@ public abstract class WrapperPatcherTask extends DefaultTask {
         lines = WrapperPatchHelper.getLinesWithoutPatches(lines, patchNames);
 
         if (patches.isEmpty()) {
-            WrapperPatchHelper.writeContent(
+            WrapperPatchHelper.writeContentWithoutPatches(
                     getPatchedGradlewScript().getAsFile().get().toPath(), lines);
             return;
         }
