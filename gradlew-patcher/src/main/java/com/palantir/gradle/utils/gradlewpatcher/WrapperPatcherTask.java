@@ -16,6 +16,7 @@
 
 package com.palantir.gradle.utils.gradlewpatcher;
 
+import java.util.List;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.file.RegularFileProperty;
 import org.gradle.api.provider.ListProperty;
@@ -30,4 +31,15 @@ public abstract class WrapperPatcherTask extends DefaultTask {
 
     @InputFile
     public abstract RegularFileProperty getOriginalGradlewScript();
+
+    /** Builds the full managed block from the ordered patches. */
+    protected final List<String> buildManagedBlock() {
+        List<String> patchLines = getOrderedPatches().get().stream()
+                .flatMap(patch ->
+                        WrapperPatchHelper.getPatchLinesWithHeader(
+                                patch.getContent().get(), patch.getName().get())
+                                .stream())
+                .toList();
+        return WrapperPatchHelper.wrapInManagedBlock(patchLines);
+    }
 }

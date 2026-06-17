@@ -45,15 +45,6 @@ public abstract class CheckGradlewTask extends WrapperPatcherTask {
 
         File gradlewFile = getOriginalGradlewScript().get().getAsFile();
         List<String> lines = WrapperPatchHelper.readAllLines(gradlewFile.toPath());
-
-        List<String> expectedPatchLines = patches.stream()
-                .flatMap(patch ->
-                        WrapperPatchHelper.getPatchLinesWithHeader(
-                                patch.getContent().get(), patch.getName().get())
-                                .stream())
-                .toList();
-        List<String> expectedBlock = WrapperPatchHelper.wrapInManagedBlock(expectedPatchLines);
-
         Optional<WrapperPatchHelper.PatchLineNumbers> managedRange =
                 WrapperPatchHelper.getPatchLineNumbers(lines, WrapperPatchHelper.MANAGED_PATCH_NAME);
 
@@ -70,6 +61,7 @@ public abstract class CheckGradlewTask extends WrapperPatcherTask {
 
         WrapperPatchHelper.PatchLineNumbers range = managedRange.get();
         List<String> actualBlock = lines.subList(range.startIndex(), range.endIndex() + 1);
+        List<String> expectedBlock = buildManagedBlock();
 
         if (!actualBlock.equals(expectedBlock)) {
             throw new ExceptionWithSuggestion("""

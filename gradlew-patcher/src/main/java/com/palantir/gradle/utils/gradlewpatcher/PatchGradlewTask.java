@@ -42,7 +42,6 @@ public abstract class PatchGradlewTask extends WrapperPatcherTask {
         log.lifecycle("Patching the gradle wrapper files.");
 
         List<OrderedPatch> patches = getOrderedPatches().get();
-
         File originalGradlewScript = getOriginalGradlewScript().getAsFile().get();
         List<String> lines = WrapperPatchHelper.readAllLines(originalGradlewScript.toPath());
 
@@ -61,13 +60,7 @@ public abstract class PatchGradlewTask extends WrapperPatcherTask {
         // Find insertion point
         int insertIndex = getInsertLineIndex(lines);
 
-        List<String> allPatchLines = patches.stream()
-                .flatMap(patch ->
-                        WrapperPatchHelper.getPatchLinesWithHeader(
-                                patch.getContent().get(), patch.getName().get())
-                                .stream())
-                .toList();
-        List<String> managedBlock = WrapperPatchHelper.wrapInManagedBlock(allPatchLines);
+        List<String> managedBlock = buildManagedBlock();
 
         WrapperPatchHelper.writeContentWithPatch(
                 getPatchedGradlewScript().getAsFile().get().toPath(), lines, managedBlock, insertIndex);
