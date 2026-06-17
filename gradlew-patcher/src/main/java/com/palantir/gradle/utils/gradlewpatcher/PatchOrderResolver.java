@@ -143,7 +143,8 @@ final class PatchOrderResolver {
         return false;
     }
 
-    private static <T> void enqueueNodesWithNoInDegree(Collection<T> nodes, MutableGraph<T> graph, Queue<T> queue) {
+    private static void enqueueNodesWithNoInDegree(
+            Collection<Integer> nodes, MutableGraph<Integer> graph, Queue<Integer> queue) {
         nodes.stream().filter(node -> graph.inDegree(node) == 0).forEach(queue::add);
     }
 
