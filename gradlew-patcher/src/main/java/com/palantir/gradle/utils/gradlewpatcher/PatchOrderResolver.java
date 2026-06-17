@@ -17,13 +17,16 @@
 package com.palantir.gradle.utils.gradlewpatcher;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.Queue;
 import java.util.Set;
 import java.util.stream.IntStream;
 import org.gradle.api.logging.Logger;
@@ -55,38 +58,31 @@ final class PatchOrderResolver {
         // Build directed graph over indices; natural ordering gives registration-order tie-breaking
         MutableGraph<Integer> graph = buildGraph(patches, idToIndex);
 
-        Map<Integer, Integer> inDegree = new HashMap<>();
-        graph.nodes()
-                .forEach(node -> inDegree.put(node, graph.predecessors(node).size()));
-
         PriorityQueue<Integer> queue = new PriorityQueue<>();
-        inDegree.entrySet().stream().filter(entry -> entry.getValue() == 0).forEach(entry -> queue.add(entry.getKey()));
+        enqueueNodesWithNoInDegree(graph.nodes(), graph, queue);
 
         ImmutableList.Builder<PatchDeclaration> sorted = ImmutableList.builder();
         while (!queue.isEmpty()) {
             int current = queue.poll();
             sorted.add(patches.get(current));
 
-            for (int successor : graph.successors(current)) {
-                int newDegree = inDegree.merge(successor, -1, Integer::sum);
-                if (newDegree == 0) {
-                    queue.add(successor);
-                }
-            }
+            Set<Integer> successors = ImmutableSet.copyOf(graph.successors(current));
+            graph.removeNode(current);
+            enqueueNodesWithNoInDegree(successors, graph, queue);
         }
 
-        List<PatchDeclaration> sortedPatches = sorted.build();
-        if (sortedPatches.size() != patches.size()) {
-            List<String> cycleNodes = inDegree.entrySet().stream()
-                    .filter(entry -> entry.getValue() > 0)
-                    .map(entry -> patches.get(entry.getKey()).getId().get())
+        // Any nodes remaining in the graph are cycle participants
+        if (!graph.nodes().isEmpty()) {
+            List<String> cycleNodes = graph.nodes().stream()
+                    .map(node -> patches.get(node).getId().get())
                     .sorted()
                     .toList();
             throw new IllegalStateException(String.format(
-                    "Cycle detected in patch ordering constraints involving: %s", String.join(", ", cycleNodes)));
+                    "Cycle detected in patch ordering constraints involving patches: %s",
+                    String.join(", ", cycleNodes)));
         }
 
-        return sortedPatches;
+        return sorted.build();
     }
 
     /** Validates patch declarations and returns a map of id to list index. */
@@ -145,6 +141,10 @@ final class PatchOrderResolver {
         }
         log.warn("Patch '{}' references unknown patch '{}' in {} — ignoring constraint", source, referenced, field);
         return false;
+    }
+
+    private static <T> void enqueueNodesWithNoInDegree(Collection<T> nodes, MutableGraph<T> graph, Queue<T> queue) {
+        nodes.stream().filter(node -> graph.inDegree(node) == 0).forEach(queue::add);
     }
 
     private PatchOrderResolver() {}
