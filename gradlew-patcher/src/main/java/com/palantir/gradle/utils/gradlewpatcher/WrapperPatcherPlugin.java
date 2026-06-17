@@ -36,35 +36,9 @@ public abstract class WrapperPatcherPlugin implements Plugin<Project> {
 
         TaskProvider<Wrapper> wrapperTask = project.getTasks().named("wrapper", Wrapper.class);
 
-        TaskProvider<WrapperPatcherTask> patchTask = project.getTasks()
-                .register("patchGradlewWrapper", WrapperPatcherTask.class, task -> {
-                    task.getGenerate().set(true);
-                });
-
-        TaskProvider<WrapperPatcherTask> checkTask = project.getTasks()
-                .register("checkGradlewWrapper", WrapperPatcherTask.class, task -> {
-                    task.getGenerate().set(false);
-                });
-
-        configureTask(project, extension, patchTask, wrapperTask);
-        configureTask(project, extension, checkTask, wrapperTask);
-
-        wrapperTask.configure(task -> task.finalizedBy(patchTask));
-
-        project.getPluginManager().withPlugin("lifecycle-base", _plugin -> {
-            project.getTasks()
-                    .named(LifecycleBasePlugin.CHECK_TASK_NAME)
-                    .configure(check -> check.dependsOn(checkTask));
-        });
-    }
-
-    private static void configureTask(
-            Project project,
-            WrapperPatcherExtension extension,
-            TaskProvider<WrapperPatcherTask> taskProvider,
-            TaskProvider<Wrapper> wrapperTask) {
+        // Configure shared inputs for all WrapperPatcherTask subtypes
         ObjectFactory objects = project.getObjects();
-        taskProvider.configure(task -> {
+        project.getTasks().withType(WrapperPatcherTask.class).configureEach(task -> {
             task.getOrderedPatches()
                     .set(project.provider(() -> PatchOrderResolver.resolve(
                                     extension.getPatches().get())
@@ -79,8 +53,26 @@ public abstract class WrapperPatcherPlugin implements Plugin<Project> {
             // wrapped in provider to avoid an implicit task dependency on wrapperTask
             task.getOriginalGradlewScript()
                     .fileProvider(project.provider(() -> wrapperTask.get().getScriptFile()));
-            task.getPatchedGradlewScript()
-                    .set(project.file(project.getRootDir().toPath().resolve("gradlew")));
+        });
+
+        TaskProvider<PatchGradlewTask> patchTask = project.getTasks()
+                .register("patchGradlewWrapper", PatchGradlewTask.class, task -> {
+                    task.getPatchedGradlewScript()
+                            .set(project.file(project.getRootDir().toPath().resolve("gradlew")));
+                });
+
+        TaskProvider<CheckGradlewTask> checkTask = project.getTasks()
+                .register("checkGradlewWrapper", CheckGradlewTask.class, task -> {
+                    task.getStampFile()
+                            .set(project.getLayout().getBuildDirectory().file("checkGradlewWrapper.stamp"));
+                });
+
+        wrapperTask.configure(task -> task.finalizedBy(patchTask));
+
+        project.getPluginManager().withPlugin("lifecycle-base", _plugin -> {
+            project.getTasks()
+                    .named(LifecycleBasePlugin.CHECK_TASK_NAME)
+                    .configure(check -> check.dependsOn(checkTask));
         });
     }
 }
