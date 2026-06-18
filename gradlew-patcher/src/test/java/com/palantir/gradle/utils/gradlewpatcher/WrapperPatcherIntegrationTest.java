@@ -383,7 +383,7 @@ class WrapperPatcherIntegrationTest {
                 .content()
                 .doesNotContain(MANAGED_HEADER)
                 .doesNotContain(MANAGED_FOOTER);
-        assertThat(result).output().contains("Gradle Wrapper script is out of date");
+        result.assertThat().output().contains("Gradle Wrapper script is out of date");
     }
 
     @Test
