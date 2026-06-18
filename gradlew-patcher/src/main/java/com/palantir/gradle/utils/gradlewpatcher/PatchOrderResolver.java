@@ -47,11 +47,10 @@ final class PatchOrderResolver {
      *
      * @throws IllegalStateException if a cycle is detected, duplicate ids/patchNames exist, or a reserved name is used
      */
-    static List<PatchDeclaration> resolve(Collection<PatchDeclaration> patchesCollection) {
-        if (patchesCollection.isEmpty()) {
+    static List<PatchDeclaration> resolve(List<PatchDeclaration> patches) {
+        if (patches.isEmpty()) {
             return List.of();
         }
-        List<PatchDeclaration> patches = List.copyOf(patchesCollection);
 
         // id -> index; validates uniqueness and reserved names
         Map<String, Integer> idToIndex = validateAndIndexPatches(patches);
