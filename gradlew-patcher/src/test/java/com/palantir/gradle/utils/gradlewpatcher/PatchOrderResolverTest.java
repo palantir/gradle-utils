@@ -128,8 +128,7 @@ class PatchOrderResolverTest {
 
     @Test
     void reserved_patch_name_throws() {
-        PatchDeclaration patch = objects.newInstance(PatchDeclaration.class);
-        patch.getId().set("bad");
+        PatchDeclaration patch = objects.newInstance(PatchDeclaration.class, "bad");
         patch.getPatchName().set(WrapperPatchHelper.MANAGED_PATCH_NAME);
         patch.getContent().set("echo bad");
 
@@ -161,8 +160,7 @@ class PatchOrderResolverTest {
     }
 
     private PatchDeclaration patch(String id) {
-        PatchDeclaration patchDeclaration = objects.newInstance(PatchDeclaration.class);
-        patchDeclaration.getId().set(id);
+        PatchDeclaration patchDeclaration = objects.newInstance(PatchDeclaration.class, id);
         patchDeclaration.getPatchName().set(id);
         patchDeclaration.getContent().set("echo " + id);
         return patchDeclaration;
@@ -170,7 +168,7 @@ class PatchOrderResolverTest {
 
     private List<String> resolveIds(List<PatchDeclaration> patches) {
         return PatchOrderResolver.resolve(patches).stream()
-                .map(patch -> patch.getId().get())
+                .map(PatchDeclaration::getName)
                 .toList();
     }
 }

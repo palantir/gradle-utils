@@ -16,30 +16,32 @@
 
 package com.palantir.gradle.utils.gradlewpatcher;
 
+import org.gradle.api.Named;
 import org.gradle.api.provider.ListProperty;
 import org.gradle.api.provider.Property;
 
 /** Per-patch configuration declared via the {@link WrapperPatcherExtension} DSL. */
-public abstract class PatchDeclaration {
+public interface PatchDeclaration extends Named {
 
     /** Unique identifier for this patch, used in ordering constraints ({@code mustRunAfter}/{@code mustRunBefore}). */
-    public abstract Property<String> getId();
+    @Override
+    String getName();
 
     /** Human-readable name used for header/footer markers in the gradlew script. */
-    public abstract Property<String> getPatchName();
+    Property<String> getPatchName();
 
     /** Shell script lines to insert between the header and footer markers. */
-    public abstract Property<String> getContent();
+    Property<String> getContent();
 
     /**
      * Patch IDs that this patch must run after. Useful when this patch depends on another patch being applied first.
      * References to unknown IDs are ignored with a warning.
      */
-    public abstract ListProperty<String> getMustRunAfter();
+    ListProperty<String> getMustRunAfter();
 
     /**
      * Patch IDs that this patch must run before. Useful when another patch depends on this one being applied first.
      * References to unknown IDs are ignored with a warning.
      */
-    public abstract ListProperty<String> getMustRunBefore();
+    ListProperty<String> getMustRunBefore();
 }

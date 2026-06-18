@@ -31,6 +31,7 @@ public abstract class WrapperPatcherPlugin implements Plugin<Project> {
         if (project.getRootProject() != project) {
             throw new IllegalArgumentException("com.palantir.gradlew-patcher must be applied to the root project only");
         }
+        @SuppressWarnings("for-rollout:GradleTypesAsFields")
         WrapperPatcherExtension extension =
                 project.getExtensions().create("wrapperPatches", WrapperPatcherExtension.class);
 
@@ -40,9 +41,7 @@ public abstract class WrapperPatcherPlugin implements Plugin<Project> {
         ObjectFactory objects = project.getObjects();
         project.getTasks().withType(WrapperPatcherTask.class).configureEach(task -> {
             task.getOrderedPatches()
-                    .set(project.provider(() -> PatchOrderResolver.resolve(
-                                    extension.getPatches().get())
-                            .stream()
+                    .set(project.provider(() -> PatchOrderResolver.resolve(extension.getPatches()).stream()
                             .map(patch -> {
                                 OrderedPatch ordered = objects.newInstance(OrderedPatch.class);
                                 ordered.getName().set(patch.getPatchName().get());

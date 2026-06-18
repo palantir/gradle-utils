@@ -18,24 +18,30 @@ package com.palantir.gradle.utils.gradlewpatcher;
 
 import javax.inject.Inject;
 import org.gradle.api.Action;
+import org.gradle.api.NamedDomainObjectList;
 import org.gradle.api.model.ObjectFactory;
-import org.gradle.api.provider.ListProperty;
 
 /** Extension for declaring wrapper patches to be applied to the gradlew script. */
 public abstract class WrapperPatcherExtension {
 
+    private final ObjectFactory objectFactory;
+    private final NamedDomainObjectList<PatchDeclaration> patches;
+
     @Inject
-    protected abstract ObjectFactory getObjectFactory();
+    public WrapperPatcherExtension(ObjectFactory objectFactory) {
+        this.objectFactory = objectFactory;
+        this.patches = objectFactory.namedDomainObjectList(PatchDeclaration.class);
+    }
 
-    public abstract ListProperty<PatchDeclaration> getPatches();
+    public final NamedDomainObjectList<PatchDeclaration> getPatches() {
+        return patches;
+    }
 
-    /** Convenience method to declare a patch with the given id, patchName, and configure it via the action. */
-    public PatchDeclaration patch(String id, String patchName, Action<? super PatchDeclaration> action) {
-        PatchDeclaration declaration = getObjectFactory().newInstance(PatchDeclaration.class);
-        declaration.getId().set(id);
-        declaration.getPatchName().set(patchName);
+    /** Convenience method to declare a patch with the given id and configure it via the action. */
+    public PatchDeclaration patch(String id, Action<? super PatchDeclaration> action) {
+        PatchDeclaration declaration = objectFactory.newInstance(PatchDeclaration.class, id);
         action.execute(declaration);
-        getPatches().add(declaration);
+        patches.add(declaration);
         return declaration;
     }
 }

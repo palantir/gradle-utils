@@ -47,10 +47,11 @@ final class PatchOrderResolver {
      *
      * @throws IllegalStateException if a cycle is detected, duplicate ids/patchNames exist, or a reserved name is used
      */
-    static List<PatchDeclaration> resolve(List<PatchDeclaration> patches) {
-        if (patches.isEmpty()) {
+    static List<PatchDeclaration> resolve(Collection<PatchDeclaration> patchesCollection) {
+        if (patchesCollection.isEmpty()) {
             return List.of();
         }
+        List<PatchDeclaration> patches = List.copyOf(patchesCollection);
 
         // id -> index; validates uniqueness and reserved names
         Map<String, Integer> idToIndex = validateAndIndexPatches(patches);
@@ -74,7 +75,7 @@ final class PatchOrderResolver {
         // Any nodes remaining in the graph are cycle participants
         if (!graph.nodes().isEmpty()) {
             List<String> cycleNodes = graph.nodes().stream()
-                    .map(node -> patches.get(node).getId().get())
+                    .map(node -> patches.get(node).getName())
                     .sorted()
                     .toList();
             throw new IllegalStateException(String.format(
@@ -90,7 +91,7 @@ final class PatchOrderResolver {
         Map<String, Integer> idToIndex = new HashMap<>();
         Set<String> seenPatchNames = new HashSet<>();
         for (int i = 0; i < patches.size(); i++) {
-            String id = patches.get(i).getId().get();
+            String id = patches.get(i).getName();
             String patchName = patches.get(i).getPatchName().get();
             if (idToIndex.containsKey(id)) {
                 throw new IllegalStateException(String.format("Duplicate patch id '%s'", id));
@@ -115,7 +116,7 @@ final class PatchOrderResolver {
 
         for (int i = 0; i < patches.size(); i++) {
             PatchDeclaration patch = patches.get(i);
-            String id = patch.getId().get();
+            String id = patch.getName();
 
             for (String after : patch.getMustRunAfter().getOrElse(List.of())) {
                 if (isKnownReference(after, idToIndex, id, "mustRunAfter")) {

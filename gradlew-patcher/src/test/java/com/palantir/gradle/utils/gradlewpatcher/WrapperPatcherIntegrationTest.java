@@ -46,16 +46,13 @@ class WrapperPatcherIntegrationTest {
         @BeforeEach
         void setup(RootProject rootProject) {
             rootProject.buildGradle().append("""
-                import com.palantir.gradle.utils.gradlewpatcher.PatchDeclaration
-
-                def testPatch = objects.newInstance(PatchDeclaration)
-                testPatch.id.set('test-patch')
-                testPatch.patchName.set('%s')
-                testPatch.content.set('''\
-                # !! Contents within this block are managed by tests !!
-                echo "test patch applied"
-                '''.stripIndent())
-                wrapperPatches.patches.add(testPatch)
+                wrapperPatches.patch('test-patch') {
+                    patchName = '%s'
+                    content = '''\
+                        # !! Contents within this block are managed by tests !!
+                        echo "test patch applied"
+                        '''.stripIndent()
+                }
                 """, PATCH_NAME);
         }
 
@@ -121,17 +118,14 @@ class WrapperPatcherIntegrationTest {
         @Test
         void multiple_patches_coexist(GradleInvoker gradle, RootProject rootProject) {
             rootProject.buildGradle().append("""
-                def patchA = objects.newInstance(PatchDeclaration)
-                patchA.id.set('patch-a')
-                patchA.patchName.set('Patch A')
-                patchA.content.set('echo "patch A"')
-                wrapperPatches.patches.add(patchA)
-
-                def patchB = objects.newInstance(PatchDeclaration)
-                patchB.id.set('patch-b')
-                patchB.patchName.set('Patch B')
-                patchB.content.set('echo "patch B"')
-                wrapperPatches.patches.add(patchB)
+                wrapperPatches.patch('patch-a') {
+                    patchName = 'Patch A'
+                    content = 'echo "patch A"'
+                }
+                wrapperPatches.patch('patch-b') {
+                    patchName = 'Patch B'
+                    content = 'echo "patch B"'
+                }
                 """);
 
             gradle.withArgs("wrapper").buildsSuccessfully();
@@ -156,35 +150,32 @@ class WrapperPatcherIntegrationTest {
         @Test
         void patches_applied_in_topological_order(GradleInvoker gradle, RootProject rootProject) {
             rootProject.buildGradle().append("""
-                def patchA = objects.newInstance(PatchDeclaration)
-                patchA.id.set('patch-a')
-                patchA.patchName.set('Patch A')
-                patchA.content.set('echo "patch A"')
-                patchA.mustRunBefore.set(['patch-b'])
-                wrapperPatches.patches.add(patchA)
-
-                def patchB = objects.newInstance(PatchDeclaration)
-                patchB.id.set('patch-b')
-                patchB.patchName.set('Patch B')
-                patchB.content.set('echo "patch B"')
-                wrapperPatches.patches.add(patchB)
+                wrapperPatches.patch('patch-a') {
+                    patchName = 'Patch A'
+                    content = 'echo "patch A"'
+                }
+                wrapperPatches.patch('patch-b') {
+                    patchName = 'Patch B'
+                    content = 'echo "patch B"'
+                    mustRunBefore = ['patch-a']
+                }
                 """);
 
             gradle.withArgs("wrapper").buildsSuccessfully();
 
-            // Verify ordering by checking content contains A before B, all within managed block
             rootProject
                     .file("gradlew")
                     .assertThat()
                     .content()
+                    .as("content contains B before A, all within managed block")
                     .containsSubsequence(
                             MANAGED_HEADER,
                             PATCH_HEADER,
                             PATCH_FOOTER,
-                            "# >>> Patch A >>>",
-                            "# <<< Patch A <<<",
                             "# >>> Patch B >>>",
                             "# <<< Patch B <<<",
+                            "# >>> Patch A >>>",
+                            "# <<< Patch A <<<",
                             MANAGED_FOOTER);
         }
 
@@ -202,12 +193,11 @@ class WrapperPatcherIntegrationTest {
 
             // Register a new patch after the first one is already written to gradlew
             rootProject.buildGradle().append("""
-                def newPatch = objects.newInstance(PatchDeclaration)
-                newPatch.id.set('new-patch')
-                newPatch.patchName.set('New patch')
-                newPatch.content.set('echo "new patch applied"')
-                newPatch.mustRunAfter.set(['test-patch'])
-                wrapperPatches.patches.add(newPatch)
+                wrapperPatches.patch('new-patch') {
+                    patchName = 'New patch'
+                    content = 'echo "new patch applied"'
+                    mustRunAfter = ['test-patch']
+                }
                 """);
 
             // Second run: both patches should be present, new patch after the original
@@ -250,12 +240,11 @@ class WrapperPatcherIntegrationTest {
 
             // Register a new patch that must run before the existing one
             rootProject.buildGradle().append("""
-                def newPatch = objects.newInstance(PatchDeclaration)
-                newPatch.id.set('new-patch')
-                newPatch.patchName.set('New patch')
-                newPatch.content.set('echo "new patch applied"')
-                newPatch.mustRunBefore.set(['test-patch'])
-                wrapperPatches.patches.add(newPatch)
+                wrapperPatches.patch('new-patch') {
+                    patchName = 'New patch'
+                    content = 'echo "new patch applied"'
+                    mustRunBefore = ['test-patch']
+                }
                 """);
 
             // Second run: both patches should be present, new patch before the original
@@ -379,15 +368,12 @@ class WrapperPatcherIntegrationTest {
     void check_task_fails_when_patch_is_missing(GradleInvoker gradle, RootProject rootProject) {
         gradle.withArgs("wrapper").buildsSuccessfully();
 
-        // Register a patch and apply it
+        // Register a patch and check without applying it
         rootProject.buildGradle().append("""
-            import com.palantir.gradle.utils.gradlewpatcher.PatchDeclaration
-
-            def tempPatch = objects.newInstance(PatchDeclaration)
-            tempPatch.id.set('temp-patch')
-            tempPatch.patchName.set('Temp patch')
-            tempPatch.content.set('echo "temporary"')
-            wrapperPatches.patches.add(tempPatch)
+            wrapperPatches.patch('temp-patch') {
+                patchName = 'Temp patch'
+                content = 'echo "temporary"'
+            }
             """);
 
         InvocationResult result = gradle.withArgs("checkGradlewWrapper").buildsWithFailure();
@@ -404,13 +390,10 @@ class WrapperPatcherIntegrationTest {
     void removing_all_patches_cleans_up_managed_block(GradleInvoker gradle, RootProject rootProject) {
         // Register a patch and apply it
         rootProject.buildGradle().append("""
-            import com.palantir.gradle.utils.gradlewpatcher.PatchDeclaration
-
-            def tempPatch = objects.newInstance(PatchDeclaration)
-            tempPatch.id.set('temp-patch')
-            tempPatch.patchName.set('Temp patch')
-            tempPatch.content.set('echo "temporary"')
-            wrapperPatches.patches.add(tempPatch)
+            wrapperPatches.patch('temp-patch') {
+                patchName = 'Temp patch'
+                content = 'echo "temporary"'
+            }
             """);
 
         gradle.withArgs("wrapper").buildsSuccessfully();
@@ -424,8 +407,7 @@ class WrapperPatcherIntegrationTest {
         // Remove the patch declaration from build.gradle
         rootProject
                 .file("build.gradle")
-                .edit(content ->
-                        content.replaceAll("(?s)def tempPatch.*?wrapperPatches\\.patches\\.add\\(tempPatch\\)\\n", ""));
+                .edit(content -> content.replaceAll("(?s)wrapperPatches\\.patch\\('temp-patch'\\).*?\\}\n", ""));
 
         // Re-running should strip the stale managed block
         gradle.withArgs("patchGradlewWrapper").buildsSuccessfully();
