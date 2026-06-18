@@ -70,7 +70,7 @@ class EnvironmentVariablesTest {
 
     @Test
     void can_get_environment_variables(GradleInvoker gradle) {
-        InvocationResult result = gradle.withArgs("help").buildsSuccessfully();
+        InvocationResult result = gradle.withArgs("help", "-P__TESTING=false").buildsSuccessfully();
 
         assertThat(result).output().contains("Variable: actual value");
     }

@@ -75,8 +75,15 @@ class WrapperPatcherIntegrationTest {
 
         @Test
         void patch_task_is_idempotent(GradleInvoker gradle, RootProject rootProject) {
-            gradle.withArgs("wrapper").buildsSuccessfully();
-            gradle.withArgs("wrapper").buildsSuccessfully();
+            InvocationResult result = gradle.withArgs("wrapper").buildsSuccessfully();
+            result.assertThat().task(":patchGradlewWrapper").succeeded();
+
+            String gradlewAfterFirstPatch = rootProject.file("gradlew").text();
+
+            gradle.withArgs("patchGradlewWrapper").buildsSuccessfully();
+            result.assertThat().task(":patchGradlewWrapper").succeeded();
+
+            rootProject.file("gradlew").assertThat().content().isEqualTo(gradlewAfterFirstPatch);
 
             rootProject
                     .file("gradlew")
@@ -95,24 +102,6 @@ class WrapperPatcherIntegrationTest {
         }
 
         @Test
-        void check_task_fails_when_patch_is_missing(GradleInvoker gradle, RootProject rootProject) {
-            gradle.withArgs("wrapper").buildsSuccessfully();
-
-            rootProject
-                    .file("gradlew")
-                    .edit(content -> content.replaceAll("(?s)" + MANAGED_HEADER + ".*?" + MANAGED_FOOTER + "\\n", ""));
-
-            InvocationResult result = gradle.withArgs("checkGradlewWrapper").buildsWithFailure();
-            rootProject
-                    .file("gradlew")
-                    .assertThat()
-                    .content()
-                    .doesNotContain(MANAGED_HEADER)
-                    .doesNotContain(MANAGED_FOOTER);
-            assertThat(result).output().contains("Gradle Wrapper script is out of date");
-        }
-
-        @Test
         void check_task_fails_when_patch_content_is_modified(GradleInvoker gradle, RootProject rootProject) {
             gradle.withArgs("wrapper").buildsSuccessfully();
             gradle.withArgs("checkGradlewWrapper").buildsSuccessfully();
@@ -122,7 +111,11 @@ class WrapperPatcherIntegrationTest {
                     .edit(content -> content.replace("echo \"test patch applied\"", "echo \"tampered\""));
 
             InvocationResult result = gradle.withArgs("checkGradlewWrapper").buildsWithFailure();
-            assertThat(result).task(":checkGradlewWrapper").failed();
+            result.assertThat().task(":checkGradlewWrapper").failed();
+            result.assertThat()
+                    .output()
+                    .contains("Gradle Wrapper script is out of date: managed patches block does not match expected"
+                            + " content.");
         }
 
         @Test
@@ -230,6 +223,7 @@ class WrapperPatcherIntegrationTest {
                     .containsOnlyOnce(PATCH_FOOTER)
                     .containsOnlyOnce("# >>> New patch >>>")
                     .containsOnlyOnce("# <<< New patch <<<")
+                    .as("patches exist only once in the correct order")
                     .containsSubsequence(
                             MANAGED_HEADER,
                             PATCH_HEADER,
@@ -379,6 +373,31 @@ class WrapperPatcherIntegrationTest {
             InvocationResult secondRun = gradle.withArgs("checkGradlewWrapper").buildsSuccessfully();
             assertThat(secondRun).task(":checkGradlewWrapper").upToDate();
         }
+    }
+
+    @Test
+    void check_task_fails_when_patch_is_missing(GradleInvoker gradle, RootProject rootProject) {
+        gradle.withArgs("wrapper").buildsSuccessfully();
+
+        // Register a patch and apply it
+        rootProject.buildGradle().append("""
+            import com.palantir.gradle.utils.gradlewpatcher.PatchDeclaration
+
+            def tempPatch = objects.newInstance(PatchDeclaration)
+            tempPatch.id.set('temp-patch')
+            tempPatch.patchName.set('Temp patch')
+            tempPatch.content.set('echo "temporary"')
+            wrapperPatches.patches.add(tempPatch)
+            """);
+
+        InvocationResult result = gradle.withArgs("checkGradlewWrapper").buildsWithFailure();
+        rootProject
+                .file("gradlew")
+                .assertThat()
+                .content()
+                .doesNotContain(MANAGED_HEADER)
+                .doesNotContain(MANAGED_FOOTER);
+        assertThat(result).output().contains("Gradle Wrapper script is out of date");
     }
 
     @Test

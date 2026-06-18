@@ -131,15 +131,14 @@ final class WrapperPatchHelper {
     }
 
     static List<String> wrapInManagedBlock(List<String> patchLines) {
-        List<String> lines = new ArrayList<>(patchLines.size() + 2);
-        lines.add(patchHeader(MANAGED_PATCH_NAME));
-        lines.addAll(patchLines);
-        lines.add(patchFooter(MANAGED_PATCH_NAME));
-        return lines;
+        return wrapWithHeaderFooter(patchLines, MANAGED_PATCH_NAME);
     }
 
     static List<String> getPatchLinesWithHeader(String patchContent, String patchName) {
-        List<String> contentLines = patchContent.lines().toList();
+        return wrapWithHeaderFooter(patchContent.lines().toList(), patchName);
+    }
+
+    private static List<String> wrapWithHeaderFooter(List<String> contentLines, String patchName) {
         List<String> lines = new ArrayList<>(contentLines.size() + 2);
         lines.add(patchHeader(patchName));
         lines.addAll(contentLines);
