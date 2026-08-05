@@ -15,4 +15,4 @@ com.gradle:develocity-gradle-plugin-adapters = 1.2.1
 org.junit.platform:* = 6.1.2
 
 # Testing
-com.palantir.gradle.consistentversions:gradle-consistent-versions = 3.16.0
+com.palantir.gradle.consistentversions:gradle-consistent-versions = 3.18.0

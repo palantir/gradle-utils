@@ -1,6 +1,6 @@
 # Run ./gradlew writeVersionsLocks to regenerate this file. Blank lines are to minimize merge conflicts.
 
-com.fasterxml.jackson.core:jackson-annotations:2.21 (4 constraints: 4844f0b2)
+com.fasterxml.jackson.core:jackson-annotations:2.22 (4 constraints: 4b44acb3)
 
 com.google.errorprone:error_prone_annotations:2.47.0 (2 constraints: 8d0f6fa2)
 
@@ -26,21 +26,21 @@ org.jspecify:jspecify:1.0.0 (8 constraints: 957daa08)
 
 cglib:cglib-nodep:3.2.2 (1 constraints: 490ded24)
 
-com.fasterxml.jackson.core:jackson-core:2.21.4 (4 constraints: 94565607)
+com.fasterxml.jackson.core:jackson-core:2.22.1 (4 constraints: 8c566404)
 
-com.fasterxml.jackson.core:jackson-databind:2.21.4 (3 constraints: 0c445d24)
+com.fasterxml.jackson.core:jackson-databind:2.22.1 (3 constraints: 0644e722)
 
-com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.21.4 (3 constraints: c05125e7)
+com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.22.1 (3 constraints: c151bde7)
 
-com.fasterxml.jackson.datatype:jackson-datatype-guava:2.21.4 (2 constraints: 8e366c95)
+com.fasterxml.jackson.datatype:jackson-datatype-guava:2.22.1 (2 constraints: 8f36b995)
 
-com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.21.4 (1 constraints: a51a8b21)
+com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.22.1 (1 constraints: a51a8b21)
 
-com.fasterxml.woodstox:woodstox-core:7.1.1 (1 constraints: 3d174926)
+com.fasterxml.woodstox:woodstox-core:7.2.0 (1 constraints: 3d174b26)
 
 com.netflix.nebula:nebula-test:12.1.0 (2 constraints: d11d8c2c)
 
-com.palantir.gradle.consistentversions:gradle-consistent-versions:3.16.0 (1 constraints: 3c05473b)
+com.palantir.gradle.consistentversions:gradle-consistent-versions:3.18.0 (1 constraints: 3e054d3b)
 
 com.palantir.gradle.failure-reports:gradle-failure-reports-common:1.18.0 (1 constraints: f21c3bc2)
 
@@ -62,7 +62,7 @@ info.picocli:picocli:4.7.7 (1 constraints: 2816dcdd)
 
 net.bytebuddy:byte-buddy:1.18.3 (1 constraints: 530b55df)
 
-one.util:streamex:0.8.4 (1 constraints: c01b2d46)
+one.util:streamex:0.9.0 (1 constraints: bd1b2c46)
 
 org.apiguardian:apiguardian-api:1.1.2 (6 constraints: 5366ce6e)
 
@@ -70,7 +70,7 @@ org.assertj:assertj-core:3.27.7 (3 constraints: a62c6955)
 
 org.codehaus.groovy:groovy:3.0.24 (2 constraints: fd25697b)
 
-org.codehaus.woodstox:stax2-api:4.2.2 (2 constraints: 6a278bd2)
+org.codehaus.woodstox:stax2-api:4.3.0 (2 constraints: 682760d2)
 
 org.hamcrest:hamcrest:2.2 (1 constraints: d20cdc04)
 
