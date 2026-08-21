@@ -20,6 +20,8 @@ import static com.palantir.gradle.testing.assertion.GradlePluginTestAssertions.a
 
 import com.palantir.gradle.testing.execution.GradleInvoker;
 import com.palantir.gradle.testing.execution.InvocationResult;
+import com.palantir.gradle.testing.execution.Options;
+import com.palantir.gradle.testing.junit.DisabledTestingProperty;
 import com.palantir.gradle.testing.junit.GradlePluginTests;
 import com.palantir.gradle.testing.project.RootProject;
 import java.util.Optional;
@@ -62,13 +64,17 @@ class EnvironmentVariablesTest {
 
     @Test
     void can_get_testing_variables(GradleInvoker gradle) {
-        InvocationResult result = gradle.withArgs("help", "-P__TESTING=true", "-P__TESTING_VARIABLE=test")
+        InvocationResult result = gradle.with(Options.builder()
+                        .addArgs("help")
+                        .putTestingEnvironmentVariables("VARIABLE", "test")
+                        .build())
                 .buildsSuccessfully();
 
         assertThat(result).output().contains("Variable: test");
     }
 
     @Test
+    @DisabledTestingProperty
     void can_get_environment_variables(GradleInvoker gradle) {
         InvocationResult result = gradle.withArgs("help").buildsSuccessfully();
 
@@ -77,7 +83,10 @@ class EnvironmentVariablesTest {
 
     @Test
     void isCircleNode0OrLocal_returns_true_on_circle_node_0(GradleInvoker gradle) {
-        InvocationResult result = gradle.withArgs("help", "-P__TESTING=true", "-P__TESTING_CIRCLE_NODE_INDEX=0")
+        InvocationResult result = gradle.with(Options.builder()
+                        .addArgs("help")
+                        .putTestingEnvironmentVariables("CIRCLE_NODE_INDEX", "0")
+                        .build())
                 .buildsSuccessfully();
 
         assertThat(result).output().contains("isCircleNode0OrLocal: true");
@@ -85,7 +94,10 @@ class EnvironmentVariablesTest {
 
     @Test
     void isCircleNode0OrLocal_returns_false_on_circle_node_1(GradleInvoker gradle) {
-        InvocationResult result = gradle.withArgs("help", "-P__TESTING=true", "-P__TESTING_CIRCLE_NODE_INDEX=1")
+        InvocationResult result = gradle.with(Options.builder()
+                        .addArgs("help")
+                        .putTestingEnvironmentVariables("CIRCLE_NODE_INDEX", "1")
+                        .build())
                 .buildsSuccessfully();
 
         assertThat(result).output().contains("isCircleNode0OrLocal: false");
@@ -93,14 +105,17 @@ class EnvironmentVariablesTest {
 
     @Test
     void isCircleNode0OrLocal_returns_true_locally(GradleInvoker gradle) {
-        InvocationResult result = gradle.withArgs("help", "-P__TESTING=true").buildsSuccessfully();
+        InvocationResult result = gradle.withArgs("help").buildsSuccessfully();
 
         assertThat(result).output().contains("isCircleNode0OrLocal: true");
     }
 
     @Test
     void isCi_returns_true_on_circle_node(GradleInvoker gradle) {
-        InvocationResult result = gradle.withArgs("help", "-P__TESTING=true", "-P__TESTING_CI=true")
+        InvocationResult result = gradle.with(Options.builder()
+                        .addArgs("help")
+                        .putTestingEnvironmentVariables("CI", "true")
+                        .build())
                 .buildsSuccessfully();
 
         assertThat(result).output().contains("isCi: true");
@@ -108,14 +123,17 @@ class EnvironmentVariablesTest {
 
     @Test
     void isCi_returns_false_locally(GradleInvoker gradle) {
-        InvocationResult result = gradle.withArgs("help", "-P__TESTING=true").buildsSuccessfully();
+        InvocationResult result = gradle.withArgs("help").buildsSuccessfully();
 
         assertThat(result).output().contains("isCi: false");
     }
 
     @Test
     void isCi_returns_false_if_CI_equals_false(GradleInvoker gradle) {
-        InvocationResult result = gradle.withArgs("help", "-P__TESTING=true", "-P__TESTING_CI=false")
+        InvocationResult result = gradle.with(Options.builder()
+                        .addArgs("help")
+                        .putTestingEnvironmentVariables("CI", "false")
+                        .build())
                 .buildsSuccessfully();
 
         assertThat(result).output().contains("isCi: false");

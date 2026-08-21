@@ -31,10 +31,15 @@ implementation 'com.palantir.gradle.utils:environment-variables:<version>'
 
 ### Example Usage
 
-To use these in Gradle tests, set the Gradle property ```__TESTING``` to true and the desired variable value as a property with the prefix ```__TESTING_```. Example:
+With `gradle-plugin-testing`, pass test values through `Options.testingEnvironmentVariables`. The framework enables testing mode automatically. Example:
+```java
+gradle.with(Options.builder()
+        .addArgs(taskName)
+        .putTestingEnvironmentVariables("FOO", "TEST_VALUE")
+        .build());
 ```
-runTasksSuccessfully(taskName, '-P__TESTING=true', '-P__TESTING_FOO=TEST_VALUE')
-```
+
+Other test frameworks can enable testing mode with the `__TESTING` Gradle property and provide values with properties prefixed by `__TESTING_`.
 
 To retrieve the value of a (test) environment variable, use the ```EnvironmentVariables``` class. Example:
 ```java
@@ -158,6 +163,8 @@ public abstract class MyTaskOrExtension {
 ## `gutil`
 
 The `GUtil` class in the `org.gradle.util` package has been deprecated and will be banned at some point. There are some very useful methods in here, notably around camel casing for use as task names. This library provides a selection of these methods. Please add more as needed, but try to avoid adding methods that are not used by any of the plugins.
+
+`ProjectDependencyUtils#getDependencyProject` resolves a `ProjectDependency` on Gradle versions before and after `ProjectDependency#getDependencyProject` was removed in Gradle 9.
 
 ### Dependency
 

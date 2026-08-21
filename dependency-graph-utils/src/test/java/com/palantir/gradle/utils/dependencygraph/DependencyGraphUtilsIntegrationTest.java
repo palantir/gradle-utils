@@ -57,6 +57,7 @@ class DependencyGraphUtilsIntegrationTest {
 
         subproject.buildGradle().append("""
             import com.palantir.gradle.utils.dependencygraph.DependencyGraphUtils
+            import org.gradle.api.artifacts.component.ProjectComponentIdentifier
 
             task printAllDeps {
                 inputs.property('configurationName', 'runtimeClasspath')
@@ -66,7 +67,14 @@ class DependencyGraphUtilsIntegrationTest {
                     def root = project.configurations.getByName(inputs.properties.get('configurationName'))
                             .incoming.resolutionResult.rootComponent.get()
                     def all = DependencyGraphUtils.allComponentResultsFromRoot(root)
-                    outputs.files.singleFile << all.collect { it.toString() }.sort().join('\\n')
+                    def names = all.collect { componentResult ->
+                        if (componentResult.id instanceof ProjectComponentIdentifier) {
+                            def projectPath = componentResult.id.projectPath
+                            return projectPath == ':' ? 'root project :' : "project ${projectPath}"
+                        }
+                        return componentResult.toString()
+                    }
+                    outputs.files.singleFile << names.sort().join('\\n')
                 }
             }
             """);
@@ -93,8 +101,8 @@ class DependencyGraphUtilsIntegrationTest {
 
         rootProject
                 .propertiesFile("versions.props")
-                .appendProperty("com.google.guava:guava", "30.1.1-jre")
-                .appendProperty("com.palantir.conjure.java:*", "7.21.0");
+                .setProperty("com.google.guava:guava", "30.1.1-jre")
+                .setProperty("com.palantir.conjure.java:*", "7.21.0");
 
         rootProject.file("versions.lock").createEmpty();
     }

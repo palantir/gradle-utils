@@ -1,7 +1,15 @@
 apply plugin: 'java-library'
 apply plugin: 'com.palantir.external-publish-jar'
+apply plugin: 'com.palantir.gradle-plugin-testing'
 
 dependencies {
     implementation gradleApi()
     implementation 'org.apache.commons:commons-lang3'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+}
+
+tasks.named('test', Test) {
+    systemProperty 'projectVersion', project.version
+    dependsOn tasks.publishToMavenLocal
 }
