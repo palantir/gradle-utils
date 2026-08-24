@@ -68,11 +68,10 @@ class DependencyGraphUtilsIntegrationTest {
                             .incoming.resolutionResult.rootComponent.get()
                     def all = DependencyGraphUtils.allComponentResultsFromRoot(root)
                     def names = all.collect { componentResult ->
-                        if (componentResult.id instanceof ProjectComponentIdentifier) {
-                            def projectPath = componentResult.id.projectPath
-                            return projectPath == ':' ? 'root project :' : "project ${projectPath}"
-                        }
-                        return componentResult.toString()
+                        def componentIdentifier = componentResult.id
+                        return componentIdentifier instanceof ProjectComponentIdentifier
+                                ? "project ${componentIdentifier.projectPath}"
+                                : componentIdentifier.displayName
                     }
                     outputs.files.singleFile << names.sort().join('\\n')
                 }
@@ -171,8 +170,8 @@ class DependencyGraphUtilsIntegrationTest {
             org.wildfly.client:wildfly-client-config:1.0.1.Final
             org.wildfly.common:wildfly-common:1.6.0.Final
             org.yaml:snakeyaml:2.1
+            project :
             project :subproject
-            root project :
             """.strip();
 
         assertThat(allDeps).isEqualTo(expected);

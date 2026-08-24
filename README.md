@@ -31,15 +31,10 @@ implementation 'com.palantir.gradle.utils:environment-variables:<version>'
 
 ### Example Usage
 
-With `gradle-plugin-testing`, pass test values through `Options.testingEnvironmentVariables`. The framework enables testing mode automatically. Example:
-```java
-gradle.with(Options.builder()
-        .addArgs(taskName)
-        .putTestingEnvironmentVariables("FOO", "TEST_VALUE")
-        .build());
+To use these in Gradle tests, set the Gradle property ```__TESTING``` to true and the desired variable value as a property with the prefix ```__TESTING_```. Example:
 ```
-
-Other test frameworks can enable testing mode with the `__TESTING` Gradle property and provide values with properties prefixed by `__TESTING_`.
+runTasksSuccessfully(taskName, '-P__TESTING=true', '-P__TESTING_FOO=TEST_VALUE')
+```
 
 To retrieve the value of a (test) environment variable, use the ```EnvironmentVariables``` class. Example:
 ```java

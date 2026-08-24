@@ -19,6 +19,7 @@ package com.palantir.gradle.utils.projectdependency;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.palantir.gradle.testing.execution.GradleInvoker;
+import com.palantir.gradle.testing.junit.AdditionallyRunWithGradle;
 import com.palantir.gradle.testing.junit.GradlePluginTests;
 import com.palantir.gradle.testing.project.RootProject;
 import com.palantir.gradle.testing.project.SubProject;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @GradlePluginTests
+@AdditionallyRunWithGradle(value = "8.10.2", reason = "Exercises the pre-8.11 compatibility path")
 class ProjectDependencyUtilsIntegrationTest {
 
     @BeforeEach
