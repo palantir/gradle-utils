@@ -31,10 +31,15 @@ implementation 'com.palantir.gradle.utils:environment-variables:<version>'
 
 ### Example Usage
 
-To use these in Gradle tests, set the Gradle property ```__TESTING``` to true and the desired variable value as a property with the prefix ```__TESTING_```. Example:
+With `gradle-plugin-testing`, pass test values through `Options.testingEnvironmentVariables`. The framework enables testing mode automatically. Example:
+```java
+gradle.with(Options.builder()
+        .addArgs(taskName)
+        .putTestingEnvironmentVariables("FOO", "TEST_VALUE")
+        .build());
 ```
-runTasksSuccessfully(taskName, '-P__TESTING=true', '-P__TESTING_FOO=TEST_VALUE')
-```
+
+Other test frameworks can enable testing mode with the `__TESTING` Gradle property and provide values with properties prefixed by `__TESTING_`.
 
 To retrieve the value of a (test) environment variable, use the ```EnvironmentVariables``` class. Example:
 ```java
@@ -167,7 +172,7 @@ implementation 'com.palantir.gradle.utils:gutil:<version>'
 
 ## `ProjectDependencyUtils`
 
-`ProjectDependency.getDependencyProject()` was removed in Gradle 9, and its replacement `ProjectDependency.getPath()` only exists on Gradle 8.11+. A plugin that needs to read a project dependency's path while supporting consumers on both sides of that line cannot reference either method unconditionally. `ProjectDependencyUtils.getProjectPath(projectDependency)` papers over this: it uses `getPath()` on Gradle 8.11+ and falls back (reflectively, so this module keeps compiling on Gradle 9) to `getDependencyProject().getPath()` on older Gradle.
+`ProjectDependencyUtils.getProjectPath(projectDependency)` returns the target project path on supported Gradle 8 and 9 versions. It uses `ProjectDependency.getPath()` on Gradle 8.11 and later, with a compatibility fallback for earlier versions.
 
 If you need the `Project` rather than its path, resolve it from any project in the build, e.g. `project.project(ProjectDependencyUtils.getProjectPath(projectDependency))`.
 

@@ -48,7 +48,6 @@ class ProjectDependencyUtilsIntegrationTest {
 
         subproject.buildGradle().plugins().add("java-library");
 
-        // Declare a project dependency on the subproject, then read its path back through the util under test.
         rootProject.buildGradle().append("""
             import com.palantir.gradle.utils.projectdependency.ProjectDependencyUtils
             import org.gradle.api.artifacts.ProjectDependency

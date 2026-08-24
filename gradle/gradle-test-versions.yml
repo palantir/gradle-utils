@@ -1,0 +1,5 @@
+major-versions:
+  8: 8.14.3
+  9: 9.7.0
+extra-versions:
+  - 8.10.2

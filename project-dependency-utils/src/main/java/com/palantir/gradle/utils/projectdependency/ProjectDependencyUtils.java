@@ -16,44 +16,30 @@
 
 package com.palantir.gradle.utils.projectdependency;
 
-import java.lang.reflect.Method;
+import org.gradle.api.GradleException;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.ProjectDependency;
 import org.gradle.util.GradleVersion;
 
-/**
- * Reads the path of a {@link ProjectDependency} across Gradle 8 and 9.
- *
- * <p>{@link ProjectDependency#getPath()} only exists on Gradle 8.11+, while the older
- * {@code ProjectDependency.getDependencyProject()} was removed in Gradle 9. To support consumers on either side of
- * that line, the pre-8.11 fallback is invoked <em>reflectively</em> rather than referenced statically. This is
- * deliberate: a static reference to the removed {@code getDependencyProject()} would stop this module compiling once
- * gradle-utils bumps its own wrapper to Gradle 9, pinning the whole repo to Gradle 8. Reflection keeps this module
- * compiling on both Gradle 8 and Gradle 9 while still working at runtime against Gradle &lt; 8.11.
- *
- * <p>Once every consumer is on Gradle 8.11+, the reflective fallback can be deleted in favour of a plain
- * {@code projectDependency.getPath()}.
- */
+/** Utilities for accessing {@link ProjectDependency} APIs across supported Gradle versions. */
 public final class ProjectDependencyUtils {
     private static final GradleVersion GRADLE_8_11 = GradleVersion.version("8.11");
 
-    /** Get the project path (e.g. {@code :foo:bar}) of a {@link ProjectDependency}. */
+    /** Returns the target project path, for example {@code :foo:bar}. */
     public static String getProjectPath(ProjectDependency projectDependency) {
         if (GradleVersion.current().compareTo(GRADLE_8_11) >= 0) {
             return projectDependency.getPath();
         }
-        return getProjectPathReflectively(projectDependency);
+        return getLegacyProjectPath(projectDependency);
     }
 
-    // Gradle < 8.11: getPath() does not exist, but the (now-removed-in-9) getDependencyProject() does. We cannot
-    // reference it statically without breaking compilation on Gradle 9, so we reach it reflectively.
-    private static String getProjectPathReflectively(ProjectDependency projectDependency) {
+    private static String getLegacyProjectPath(ProjectDependency projectDependency) {
         try {
-            Method getDependencyProject = ProjectDependency.class.getMethod("getDependencyProject");
-            Project dependencyProject = (Project) getDependencyProject.invoke(projectDependency);
+            Project dependencyProject = (Project)
+                    ProjectDependency.class.getMethod("getDependencyProject").invoke(projectDependency);
             return dependencyProject.getPath();
         } catch (ReflectiveOperationException e) {
-            throw new RuntimeException("Unable to read the project path from a ProjectDependency on Gradle < 8.11", e);
+            throw new GradleException("Failed to read the project path from " + projectDependency, e);
         }
     }
 

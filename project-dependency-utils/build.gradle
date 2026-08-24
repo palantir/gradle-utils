@@ -14,6 +14,5 @@ dependencies {
 tasks.named('test', Test) {
     systemProperty 'projectVersion', project.version
 
-    // Publish to maven local so that the tests can directly import ProjectDependencyUtils
     dependsOn tasks.publishToMavenLocal
 }
