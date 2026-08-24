@@ -165,6 +165,18 @@ The `GUtil` class in the `org.gradle.util` package has been deprecated and will 
 implementation 'com.palantir.gradle.utils:gutil:<version>'
 ```
 
+## `ProjectDependencyUtils`
+
+`ProjectDependencyUtils.getProjectPath(projectDependency)` returns the target project path on supported Gradle 8 and 9 versions. It uses `ProjectDependency.getPath()` on Gradle 8.11 and later, with a compatibility fallback for earlier versions.
+
+If you need the `Project` rather than its path, resolve it from any project in the build, e.g. `project.project(ProjectDependencyUtils.getProjectPath(projectDependency))`.
+
+### Dependency
+
+```
+implementation 'com.palantir.gradle.utils:project-dependency-utils:<version>'
+```
+
 ## `dependency-graph-utils`
 
 [To support Configuration Cache, you need to use new APIs](https://docs.gradle.org/8.4/userguide/configuration_cache.html#config_cache:requirements:~:text=Referencing%20dependency%20resolution,invoking%20ResolutionResult.getRootComponent()) when passing the components of a resolved `Configuration` to a `Task`. No longer can you pass in the `Configuration` object then use it in the task, instead you must call the method [`Provider<ResolvedComponentResult> getRootComponent()`](https://docs.gradle.org/8.4/javadoc/org/gradle/api/artifacts/result/ResolutionResult.html#getRootComponent--) on `ResolutionResult` rather than [`Set<ResolvedComponentResult> getAllComponents()`](https://docs.gradle.org/8.4/javadoc/org/gradle/api/artifacts/result/ResolutionResult.html#getAllComponents--).
