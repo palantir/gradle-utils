@@ -67,14 +67,16 @@ class ProjectDependencyUtilsIntegrationTest {
                 doFirst {
                     ProjectDependency projectDependency = configurations.projectDeps.dependencies
                             .find { dependency -> dependency instanceof ProjectDependency }
-                    outputs.files.singleFile << ProjectDependencyUtils.getProjectPath(projectDependency)
+                    outputs.files.singleFile << ProjectDependencyUtils
+                            .resolveProjectDependency(project, projectDependency)
+                            .path
                 }
             }
             """);
     }
 
     @Test
-    void reads_the_path_of_a_project_dependency(GradleInvoker gradle, RootProject rootProject) {
+    void resolves_a_project_dependency(GradleInvoker gradle, RootProject rootProject) {
         gradle.withArgs("printProjectPath").buildsSuccessfully();
 
         String projectPath = rootProject.buildDir().file("projectPath").text().strip();
