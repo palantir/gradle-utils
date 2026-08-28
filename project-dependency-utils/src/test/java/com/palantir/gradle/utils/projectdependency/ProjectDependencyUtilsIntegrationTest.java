@@ -67,6 +67,15 @@ class ProjectDependencyUtilsIntegrationTest {
                 doFirst {
                     ProjectDependency projectDependency = configurations.projectDeps.dependencies
                             .find { dependency -> dependency instanceof ProjectDependency }
+                    outputs.files.singleFile << ProjectDependencyUtils.getProjectPath(projectDependency)
+                }
+            }
+
+            task printResolvedProjectPath {
+                outputs.file('build/resolvedProjectPath')
+                doFirst {
+                    ProjectDependency projectDependency = configurations.projectDeps.dependencies
+                            .find { dependency -> dependency instanceof ProjectDependency }
                     outputs.files.singleFile << ProjectDependencyUtils
                             .resolveProjectDependency(project, projectDependency)
                             .path
@@ -76,10 +85,20 @@ class ProjectDependencyUtilsIntegrationTest {
     }
 
     @Test
-    void resolves_a_project_dependency(GradleInvoker gradle, RootProject rootProject) {
+    void reads_the_path_of_a_project_dependency(GradleInvoker gradle, RootProject rootProject) {
         gradle.withArgs("printProjectPath").buildsSuccessfully();
 
         String projectPath = rootProject.buildDir().file("projectPath").text().strip();
+
+        assertThat(projectPath).isEqualTo(":subproject");
+    }
+
+    @Test
+    void resolves_a_project_dependency(GradleInvoker gradle, RootProject rootProject) {
+        gradle.withArgs("printResolvedProjectPath").buildsSuccessfully();
+
+        String projectPath =
+                rootProject.buildDir().file("resolvedProjectPath").text().strip();
 
         assertThat(projectPath).isEqualTo(":subproject");
     }
