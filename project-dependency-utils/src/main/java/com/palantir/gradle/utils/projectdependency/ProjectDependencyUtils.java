@@ -33,6 +33,11 @@ public final class ProjectDependencyUtils {
         return getLegacyProjectPath(projectDependency);
     }
 
+    /** Returns the project targeted by a project dependency. */
+    public static Project resolveProjectDependency(Project project, ProjectDependency projectDependency) {
+        return project.getRootProject().project(getProjectPath(projectDependency));
+    }
+
     private static String getLegacyProjectPath(ProjectDependency projectDependency) {
         try {
             Project dependencyProject = (Project)
