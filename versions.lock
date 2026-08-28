@@ -2,11 +2,11 @@
 
 com.fasterxml.jackson.core:jackson-annotations:2.22 (4 constraints: 4c445cb4)
 
-com.google.errorprone:error_prone_annotations:2.47.0 (2 constraints: 8d0f6fa2)
+com.google.errorprone:error_prone_annotations:2.50.0 (2 constraints: 870f5ea2)
 
 com.google.guava:failureaccess:1.0.3 (1 constraints: 160ae3b4)
 
-com.google.guava:guava:33.6.0-jre (5 constraints: 2685c6a4)
+com.google.guava:guava:33.7.1-jre (5 constraints: 28858ca6)
 
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
 
@@ -18,7 +18,7 @@ org.apache.commons:commons-lang3:3.20.0 (1 constraints: 3705393b)
 
 org.immutables:value:2.12.2 (1 constraints: 3905373b)
 
-org.jspecify:jspecify:1.0.0 (8 constraints: 957daa08)
+org.jspecify:jspecify:1.0.1 (8 constraints: 967df209)
 
 
 
@@ -40,7 +40,7 @@ com.fasterxml.woodstox:woodstox-core:7.2.0 (1 constraints: 3d174b26)
 
 com.netflix.nebula:nebula-test:12.1.0 (2 constraints: d11d8c2c)
 
-com.palantir.gradle.consistentversions:gradle-consistent-versions:3.18.0 (1 constraints: 3e054d3b)
+com.palantir.gradle.consistentversions:gradle-consistent-versions:3.19.0 (1 constraints: 3f05503b)
 
 com.palantir.gradle.failure-reports:gradle-failure-reports-common:1.18.0 (1 constraints: f21c3bc2)
 
