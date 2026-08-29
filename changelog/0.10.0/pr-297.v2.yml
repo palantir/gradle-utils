@@ -1,5 +1,0 @@
-type: improvement
-improvement:
-  description: Os & Arch enums
-  links:
-  - https://github.com/palantir/gradle-utils/pull/297

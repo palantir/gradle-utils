@@ -1,9 +1,0 @@
-type: improvement
-improvement:
-  description: |-
-    Add `GradleExec` utility to centralize provider zipping for command execution
-
-    Eliminates code duplication by providing reusable methods for combining
-    stdout, stderr, and exit result providers from `ProviderFactory.exec()`
-  links:
-  - https://github.com/palantir/gradle-utils/pull/426

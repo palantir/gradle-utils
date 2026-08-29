@@ -1,5 +1,0 @@
-type: feature
-feature:
-  description: Add `CircleCiArtifacts` managed type.
-  links:
-  - https://github.com/palantir/gradle-utils/pull/103
