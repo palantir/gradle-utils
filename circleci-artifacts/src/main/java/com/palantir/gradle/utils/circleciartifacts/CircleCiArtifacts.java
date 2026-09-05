@@ -27,7 +27,6 @@ import org.gradle.api.file.RegularFile;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.Nested;
 
-@SuppressWarnings("JavaxInjectOnAbstractMethod")
 public abstract class CircleCiArtifacts {
 
     @Nested
