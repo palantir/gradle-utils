@@ -16,7 +16,7 @@ com.gradle:develocity-gradle-plugin-adapters:1.2.1 (1 constraints: 0605f735)
 
 org.apache.commons:commons-lang3:3.21.0 (1 constraints: 38053c3b)
 
-org.immutables:value:2.12.2 (1 constraints: 3905373b)
+org.immutables:value:2.12.3 (1 constraints: 3a05383b)
 
 org.jspecify:jspecify:1.0.1 (8 constraints: 967df209)
 
