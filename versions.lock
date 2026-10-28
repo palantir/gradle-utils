@@ -6,7 +6,7 @@ com.google.errorprone:error_prone_annotations:2.50.0 (2 constraints: 870f5ea2)
 
 com.google.guava:failureaccess:1.0.3 (1 constraints: 160ae3b4)
 
-com.google.guava:guava:33.7.1-jre (5 constraints: 28858ca6)
+com.google.guava:guava:33.7.2-jre (5 constraints: 29856ea7)
 
 com.google.guava:listenablefuture:9999.0-empty-to-avoid-conflict-with-guava (1 constraints: bd17c918)
 
@@ -30,9 +30,9 @@ com.fasterxml.jackson.core:jackson-core:2.22.4 (4 constraints: 9856db08)
 
 com.fasterxml.jackson.core:jackson-databind:2.22.4 (3 constraints: 0f442125)
 
-com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.22.4 (3 constraints: c351e9e8)
+com.fasterxml.jackson.dataformat:jackson-dataformat-xml:2.22.4 (3 constraints: c4517fe9)
 
-com.fasterxml.jackson.datatype:jackson-datatype-guava:2.22.4 (2 constraints: 91364f96)
+com.fasterxml.jackson.datatype:jackson-datatype-guava:2.22.4 (2 constraints: 92369a96)
 
 com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.22.4 (1 constraints: a51a8b21)
 
@@ -40,7 +40,7 @@ com.fasterxml.woodstox:woodstox-core:7.2.0 (1 constraints: 3d174b26)
 
 com.netflix.nebula:nebula-test:12.1.0 (2 constraints: d11d8c2c)
 
-com.palantir.gradle.consistentversions:gradle-consistent-versions:3.21.0 (1 constraints: 38053c3b)
+com.palantir.gradle.consistentversions:gradle-consistent-versions:3.22.0 (1 constraints: 39053f3b)
 
 com.palantir.gradle.failure-reports:gradle-failure-reports-common:1.18.0 (1 constraints: f21c3bc2)
 
